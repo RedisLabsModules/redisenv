@@ -73,7 +73,8 @@ class EnvironmentHandler:
         d = yaml.safe_load(open(self._getenv(name)))
         ports = {}
         for k, i in d.get("services").items():
-            ports[k] = int(i["ports"][0].split(":")[0])
+            port = int(i["ports"][0].split(":")[0])
+            ports[k] = {"port": port, "connstr": f"redis://localhost:{port}"}
 
         if output:
             print(json.dumps(ports))
