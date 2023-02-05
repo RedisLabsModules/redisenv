@@ -8,6 +8,7 @@ from . import defaultenvname
 def sentinel():
     """for creating a redis-sentinel environment"""
 
+
 @click.command()
 @click.option(
     "--name",
@@ -79,17 +80,32 @@ def sentinel():
 )
 @click.pass_context
 def create(
-    ctx, name, force, nodes, version, image, mounts, redisconf, templatefile, user, password, sentinelopts, redisopts
+    ctx,
+    name,
+    force,
+    nodes,
+    version,
+    image,
+    mounts,
+    redisconf,
+    templatefile,
+    user,
+    password,
+    sentinelopts,
+    redisopts,
 ):
     """create and start a new environment"""
-    
+
     if nodes < 4:
-        sys.stderr.write("Exiting. At least 4 nodes are needed for this configuration.\n")
+        sys.stderr.write(
+            "Exiting. At least 4 nodes are needed for this configuration.\n"
+        )
         sys.exit(3)
-        
+
     from ..util import free_ports
+
     ports = free_ports(nodes)
-    
+
     sp = gensentinelspec(
         name,
         nodes,
@@ -100,7 +116,7 @@ def create(
         redisopts,
         ports,
     )
-    
+
     if templatefile != "":
         cfg = gensentinelconf(
             ports,

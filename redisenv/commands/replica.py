@@ -4,9 +4,11 @@ from ..env import EnvironmentHandler
 from ..envhelpers import _default_options, genreplicaspec
 from . import defaultenvname
 
+
 def replica():
     """for creating environments with collections of replicas"""
-    
+
+
 @click.command()
 @click.option(
     "--name",
@@ -69,7 +71,7 @@ def replica():
     "--replicaof",
     type=int,
     default=-1,
-    help="If set nodes replicate the specified port, if not first node is replicated."
+    help="If set nodes replicate the specified port, if not first node is replicated.",
 )
 @click.option(
     "--docker-ip",
@@ -79,9 +81,18 @@ def replica():
 )
 @click.pass_context
 def create(
-    ctx, name, force, nodes, 
-    version, image, mounts, conffile, ipv6, redisopts,
-    replicaof, docker_ip,
+    ctx,
+    name,
+    force,
+    nodes,
+    version,
+    image,
+    mounts,
+    conffile,
+    ipv6,
+    redisopts,
+    replicaof,
+    docker_ip,
 ):
     """create and start a new environment"""
     if replicaof == -1:
@@ -101,7 +112,7 @@ def create(
         replicaof,
         docker_ip,
     )
-        
+
     g = EnvironmentHandler(ctx.obj.get("DESTDIR"))
     if force:
         try:

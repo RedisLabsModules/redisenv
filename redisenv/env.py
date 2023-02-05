@@ -71,7 +71,7 @@ class EnvironmentHandler:
             logger.debug(f"Writing {destfile}")
             fp.write(tmpl.render(config))
 
-    def start(self, name: str, config: Optional[Dict], redistype: str="standalone"):
+    def start(self, name: str, config: Optional[Dict], redistype: str = "standalone"):
         """Start the environment"""
         if config:
             logger.info(f"Generating environment {name}")

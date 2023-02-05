@@ -68,9 +68,7 @@ def standalone():
     type=str,
 )
 @click.pass_context
-def create(
-    ctx, name, force, nodes, version, image, mounts, conffile, ipv6, redisopts
-):
+def create(ctx, name, force, nodes, version, image, mounts, conffile, ipv6, redisopts):
     """create and start a new environment"""
     sp = genstandalonespec(
         name,

@@ -12,6 +12,7 @@ _default_options = {
     "_docker_host_ip": "172.0.0.1",
 }
 
+
 def genstandalonespec(
     name: str,
     nodes: int = _default_options["_nodes"],
@@ -41,6 +42,7 @@ def genstandalonespec(
 
     return d
 
+
 def genreplicaspec(
     name: str,
     nodes: int = _default_options["_nodes"],
@@ -63,7 +65,7 @@ def genreplicaspec(
     d["conffile"] = conffile
     d["ipv6"] = ipv6
     d["image"] = image
-    d['docker_host'] = dockerhost
+    d["docker_host"] = dockerhost
     d["redisoptions"] = redisopts
     d["ports"] = free_ports(nodes)
     d["replicaof"] = replicaof
@@ -74,6 +76,7 @@ def genreplicaspec(
 
     return d
 
+
 def gensentinelspec(
     name: str,
     nodes: int = _default_options["_nodes"],
@@ -81,13 +84,12 @@ def gensentinelspec(
     image: str = _default_options["_image"],
     mounts: List = [],
     redisconf: str = "",
-    sentinelconfs: List = [], 
+    sentinelconfs: List = [],
     redisopts: List = [],
     ports: List = [],
-
 ) -> Dict:
     """Generate the sentinel environment spec, and conf file."""
-    
+
     d = {"name": name}
     d["nodes"] = nodes
     d["version"] = version
@@ -100,27 +102,41 @@ def gensentinelspec(
     d["mounts"] = []
     for m in mounts:
         d["mounts"].append({"local": m[0], "remote": m[1]})
-        
+
     if ports != []:
         d["ports"] = ports
     else:
         d["ports"] = free_ports(nodes)
-        
+
     return d
 
-def gensentinelconf(ports: List, user: str, password: str, sentinelopts: List=[], templatefile: str=None):
+
+def gensentinelconf(
+    ports: List,
+    user: str,
+    password: str,
+    sentinelopts: List = [],
+    templatefile: str = None,
+):
     here = os.path.join(os.path.dirname(__file__), "templates")
     if templatefile is None:
         tmpl = jinja2.FileSystemLoader(searchpath=here)
         tenv = jinja2.Environment(loader=tmpl)
     else:
-        tenv = jinja2.Environment(loader=jinja2.BaseLoader).from_string(open(templatefile).read())
+        tenv = jinja2.Environment(loader=jinja2.BaseLoader).from_string(
+            open(templatefile).read()
+        )
     if templatefile is None:
         tmpl = tenv.get_template("sentinel.conf.tmpl")
-        
+
     conffiles = []
     for p in ports[1:]:
-        context = {"sentinelport": p, "port": ports[0], "sentinel_user": user, "sentinel_password": password,
-                "sentinelopts": sentinelopts}
+        context = {
+            "sentinelport": p,
+            "port": ports[0],
+            "sentinel_user": user,
+            "sentinel_password": password,
+            "sentinelopts": sentinelopts,
+        }
         conffiles.append(tmpl.render(context))
     return conffiles
