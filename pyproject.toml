@@ -7,7 +7,7 @@ readme = "README.md"
 license = "MIT"
 
 include = [
-    {path = "redisenv/spec.yml", format=["sdist", "wheel"]}
+    {path = "redisenv/templates/*", format=["sdist", "wheel"]}
 ]
 
 classifiers = [

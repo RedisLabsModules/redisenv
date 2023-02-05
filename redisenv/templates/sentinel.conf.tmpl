@@ -1,0 +1,15 @@
+port {{sentinelport}}
+daemonize yes
+sentinel monitor mymaster 127.0.0.1 {{port}} 2
+{% if sentinel_user %}
+sentinel auth-user mymaster {{sentinel_user}}
+{% endif %}
+{% if sentinel_password %}
+sentinel auth-pass mymaster {{sentinel_password}}
+{% endif %}
+sentinel down-after-milliseconds mymaster 120000
+sentinel failover-timeout mymaster 120000
+sentinel parallel-syncs mymaster 1
+{% for s in sentinelopts %}
+{{s}}
+{% endfor %}

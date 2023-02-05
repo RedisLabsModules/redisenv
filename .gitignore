@@ -1,3 +1,6 @@
 .redisenvs
 .venv
 **/__pycache__/**
+dist
+TODO
+redisenv.envs/**

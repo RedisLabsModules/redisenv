@@ -3,51 +3,8 @@ import yaml
 import os
 from loguru import logger
 from typing import Dict, List, Optional
-from .util import free_ports
 import json
 import subprocess
-
-_default_options = {
-    "_nodes": 1,
-    "_version": "6.2.8",
-    "_port": 6379,
-    "_image": "redis",
-    "_ipv6": False,
-    "_enterprise": False,
-}
-
-
-def genenvspec(
-    name: str,
-    nodes: int = _default_options["_nodes"],
-    version: str = _default_options["_version"],
-    listening_port: int = _default_options["_port"],
-    image: str = _default_options["_image"],
-    mounts: List = [],
-    conffile: str = "",
-    ipv6: bool = _default_options["_ipv6"],
-    redisopts: List = [],
-    enterprise: bool = _default_options["_enterprise"],
-) -> Dict:
-    """Generate the environment spec, used in generating the
-    docker-compose configuration.
-    """
-    d = {"name": name}
-    d["nodes"] = nodes
-    d["version"] = version
-    d["listening_port"] = listening_port
-    d["ports"] = free_ports(nodes)
-    d["conffile"] = conffile
-    d["ipv6"] = ipv6
-    d["enterpise"] = enterprise
-    d["image"] = image
-    d["redisoptions"] = redisopts
-
-    d["mounts"] = []
-    for m in mounts:
-        d["mounts"].append({"local": m[0], "remote": m[1]})
-
-    return d
 
 
 class EnvironmentHandler:
@@ -94,27 +51,31 @@ class EnvironmentHandler:
     def _envfile(self, name: str):
         return os.path.join(self.envdir, f"{name}.yml")
 
-    def _generate(self, name: str, config: Dict):
+    def _generate(self, name: str, config: Dict, redistype: str):
         """Generate the environment configuration"""
         if not os.path.isdir(self.envdir):
             os.makedirs(self.envdir)
 
         destfile = self._envfile(name)
-        here = os.path.dirname(__file__)
+        here = os.path.join(os.path.dirname(__file__), "templates")
 
         # add the environment here
         tmpl = jinja2.FileSystemLoader(searchpath=here)
         tenv = jinja2.Environment(loader=tmpl)
-        tmpl = tenv.get_template("env.tmpl")
+        if redistype == "standalone":
+            templatefile = "standalone.tmpl"
+        elif redistype == "replicaof":
+            templatefile = "replicaof.tmpl"
+        tmpl = tenv.get_template(templatefile)
         with open(destfile, "w+") as fp:
             logger.debug(f"Writing {destfile}")
             fp.write(tmpl.render(config))
 
-    def start(self, name: str, config: Optional[Dict]):
+    def start(self, name: str, config: Optional[Dict], redistype: str="standalone"):
         """Start the environment"""
         if config:
             logger.info(f"Generating environment {name}")
-            self._generate(name, config)
+            self._generate(name, config, redistype)
         cmd = ["docker-compose", "-f", self._envfile(name), "up", "-d", "--quiet-pull"]
         try:
             logger.info(f"Starting environment {name} via docker-compose")

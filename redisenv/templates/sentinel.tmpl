@@ -1,0 +1,37 @@
+---
+
+# docker-compose version 3 does not support ipv6
+version: "2.1"
+
+services:
+
+    redissentinel:
+        image: {{image}}:{{version}}
+        ports:
+            - {{ports[0]}}:{{listening_port}}
+        {% if mounts|length != 0 %}
+        volumes:
+        {% for m in mounts %}
+            - {{m['local']}}:{{m['remote']}}
+        {% endfor %}
+        {% endif %}
+        {% if redisconf != none %}
+            - {{redisconf}}:/usr/local/etc/redis/redis.conf
+        {% endif %}
+        {% if redisoptions|length != 0 %} 
+        command: redis-server {{ redisoptions[n] }}
+        {% endif %}
+
+    {% for n in range(nodes[1:]) %}
+    sentinel{{n+1}}:
+        image: {{image}}:{{version}}
+        ports:
+            - "{{ports[n]}}:{{sentinel_port}}"
+        {% for m in mounts %}
+        volumes:
+            - {{m['local']}}:{{m['remote']}}
+        {% endfor %}
+        {% if conffile != none %}
+            - {{conffile}}:/usr/local/etc/redis/redis.conf
+        {% endif %}
+    {% endfor%}

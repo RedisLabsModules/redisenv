@@ -13,12 +13,15 @@ services:
     {% for n in range(nodes) %}
     redis{{n+1}}:
         image: {{image}}:{{version}}
+        container_name: redis{{name}}{{n+1}}
         ports:
             - "{{ports[n]}}:{{listening_port}}"
-        {% for m in mounts %}
+        {% if redisoptions|length != 0 or conffile != None %} 
         volumes:
+        {% for m in mounts %}
             - {{m['local']}}:{{m['remote']}}
         {% endfor %}
+        {% endif %}
         {% if conffile != none %}
             - {{conffile}}:/usr/local/etc/redis/redis.conf
         {% endif %}
@@ -27,7 +30,13 @@ services:
         networks:
             - {{name}}_ipv6net
         {% endif %}
-        {% if redisoptions|length != 0 %} 
-        command: redis-server {{ redisoptions[n] }}
+        {% if replicaof == -1 %}
+        {% if n == 0 %}
+        command: redis-server {{ ' '.join(redisoptions)|safe }}
+        {% else %}
+        command: redis-server --replicaof redis{{name}}1 6379 {{ redisoptions|join(' ')}}
+        {% endif %}
+        {% else %}
+        command: redis-server --replicaof {{dockerhost}} {{replicaof}} {{ redisoptions|join(' ')}}
         {% endif %}
     {% endfor%}

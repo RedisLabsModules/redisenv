@@ -1,14 +1,12 @@
 import click
 import sys
 from ..env import EnvironmentHandler
-from ..envhelpers import _default_options, genstandalonespec
+from ..envhelpers import _default_options, genreplicaspec
 from . import defaultenvname
 
-
-def standalone():
-    """for creating an environment based on standalone redis"""
-
-
+def replica():
+    """for creating environments with collections of replicas"""
+    
 @click.command()
 @click.option(
     "--name",
@@ -27,7 +25,7 @@ def standalone():
     "--nodes",
     "-n",
     help="Number of nodes",
-    default=_default_options["_nodes"],
+    default=2,
     type=int,
     show_default=True,
 )
@@ -67,12 +65,31 @@ def standalone():
     multiple=True,
     type=str,
 )
+@click.option(
+    "--replicaof",
+    type=int,
+    default=-1,
+    help="If set nodes replicate the specified port, if not first node is replicated."
+)
+@click.option(
+    "--docker-ip",
+    type=str,
+    default="172.0.0.1",
+    help="Set, to override the  docker ip (mostly used with the replicaof options)",
+)
 @click.pass_context
 def create(
-    ctx, name, force, nodes, version, image, mounts, conffile, ipv6, redisopts
+    ctx, name, force, nodes, 
+    version, image, mounts, conffile, ipv6, redisopts,
+    replicaof, docker_ip,
 ):
     """create and start a new environment"""
-    sp = genstandalonespec(
+    if replicaof == -1:
+        if nodes < 2:
+            sys.stderr.write("To configure replicas, at least two nodes are needed.\n")
+            sys.exit(3)
+
+    sp = genreplicaspec(
         name,
         nodes,
         version,
@@ -81,11 +98,14 @@ def create(
         conffile,
         ipv6,
         redisopts,
+        replicaof,
+        docker_ip,
     )
+        
     g = EnvironmentHandler(ctx.obj.get("DESTDIR"))
     if force:
         try:
             g.stop(name)
         except:
             pass
-    g.start(name, sp, "standalone")
+    g.start(name, sp, "replicaof")
