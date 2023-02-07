@@ -65,7 +65,7 @@ class EnvironmentHandler:
         if redistype == "standalone":
             templatefile = "standalone.tmpl"
         elif redistype == "replicaof":
-            templatefile = "replicaof.tmpl"
+            templatefile = "replica.tmpl"
         tmpl = tenv.get_template(templatefile)
         with open(destfile, "w+") as fp:
             logger.debug(f"Writing {destfile}")
