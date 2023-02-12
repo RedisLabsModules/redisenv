@@ -5,8 +5,9 @@ version: "2.1"
 
 services:
 
-    redissentinel:
+    redissentinel_{{name}}:
         image: {{image}}:{{version}}
+        container_name: redis{{name}}
         ports:
             - {{ports[0]}}:{{listening_port}}
         {% if mounts|length != 0 %}
@@ -19,19 +20,18 @@ services:
             - {{redisconf}}:/usr/local/etc/redis/redis.conf
         {% endif %}
         {% if redisoptions|length != 0 %} 
-        command: redis-server {{ redisoptions[n] }}
+        command: redis-server {{ redisoptions|join(" ") }}
         {% endif %}
 
-    {% for n in range(nodes[1:]) %}
-    sentinel{{n+1}}:
+{% for n in range(nodes) %}
+{% if not loop.first %}
+    sentinel_{{name}}_{{n}}:
         image: {{image}}:{{version}}
         ports:
-            - "{{ports[n]}}:{{sentinel_port}}"
-        {% for m in mounts %}
+            - "{{ports[n+1]}}:{{sentinel_port}}"
         volumes:
-            - {{m['local']}}:{{m['remote']}}
-        {% endfor %}
-        {% if conffile != none %}
-            - {{conffile}}:/usr/local/etc/redis/redis.conf
-        {% endif %}
-    {% endfor%}
+            - "./{{name}}/configs/{{n}}/sentinel.conf:/data/redis.conf:rw"
+        command: redis-sentinel /data/redis.conf
+
+{% endif %}
+{% endfor%}

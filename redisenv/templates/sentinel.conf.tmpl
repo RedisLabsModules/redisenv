@@ -1,6 +1,6 @@
 port {{sentinelport}}
-daemonize yes
-sentinel monitor mymaster 127.0.0.1 {{port}} 2
+daemonize no
+sentinel monitor mymaster {{dockerhost}} {{port}} 2
 {% if sentinel_user %}
 sentinel auth-user mymaster {{sentinel_user}}
 {% endif %}

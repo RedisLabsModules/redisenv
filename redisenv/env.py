@@ -6,6 +6,10 @@ from typing import Dict, List, Optional
 import json
 import subprocess
 
+SENTINEL_TYPE = "sentinel"
+STANDALONE_TYPE = "standalone"
+REPLICAOF_TYPE = "replicaof"
+
 
 class EnvironmentHandler:
     """Environment"""
@@ -53,6 +57,7 @@ class EnvironmentHandler:
 
     def _generate(self, name: str, config: Dict, redistype: str):
         """Generate the environment configuration"""
+        
         if not os.path.isdir(self.envdir):
             os.makedirs(self.envdir)
 
@@ -61,21 +66,28 @@ class EnvironmentHandler:
 
         # add the environment here
         tmpl = jinja2.FileSystemLoader(searchpath=here)
-        tenv = jinja2.Environment(loader=tmpl)
-        if redistype == "standalone":
+        tenv = jinja2.Environment(loader=tmpl, trim_blocks=True)
+        if redistype == STANDALONE_TYPE:
             templatefile = "standalone.tmpl"
-        elif redistype == "replicaof":
+        elif redistype == REPLICAOF_TYPE:
             templatefile = "replica.tmpl"
+        elif redistype == SENTINEL_TYPE:
+            templatefile = "sentinel.tmpl"
         tmpl = tenv.get_template(templatefile)
         with open(destfile, "w+") as fp:
             logger.debug(f"Writing {destfile}")
             fp.write(tmpl.render(config))
 
-    def start(self, name: str, config: Optional[Dict], redistype: str = "standalone"):
-        """Start the environment"""
+    def start(self, name: str, config: Optional[Dict], 
+              redistype: str = STANDALONE_TYPE):
+        """Start the environment """
         if config:
             logger.info(f"Generating environment {name}")
             self._generate(name, config, redistype)
+            
+        self._start(name)
+            
+    def _start(self, name):
         cmd = ["docker-compose", "-f", self._envfile(name), "up", "-d", "--quiet-pull"]
         try:
             logger.info(f"Starting environment {name} via docker-compose")
@@ -84,7 +96,7 @@ class EnvironmentHandler:
         except:
             logger.critical(f"Failed to start environment {name}.")
             raise
-
+ 
     def pause(self, name: str):
         """Pause, the specified environment"""
         cmd = ["docker-compose", "-f", self._envfile, "pause"]
@@ -128,3 +140,25 @@ class EnvironmentHandler:
         except:
             logger.critical(f"Failed to stop environment {name}")
             raise
+
+
+class SentinelHandler(EnvironmentHandler):
+    """A wrapper, specificatlly for sentinel"""
+    
+    def _genconfigs(self, env_name, config_file_content):
+        """Generate the configuration files for the service"""
+        
+        count = 1
+        for c in config_file_content:
+            node_name = f"sentinel{count}"
+            confdest = os.path.join(self.envdir, env_name, "configs", str(count))
+            os.makedirs(confdest, exist_ok=True)
+            count += 1
+            with open(os.path.join(confdest, "sentinel.conf"), "w+") as fp:
+                fp.write(c)
+            
+    def start(self, name, config_file_content, config):
+        """Generate the sentinel configs, then start it up"""
+        self._genconfigs(name, config_file_content)
+        self._generate(name, config, SENTINEL_TYPE)
+        self._start(name)

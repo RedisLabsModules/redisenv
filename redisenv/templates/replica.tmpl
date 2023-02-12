@@ -11,7 +11,7 @@ networks:
 
 services:
     {% for n in range(nodes) %}
-    redis{{n+1}}:
+    redis_{{name}}_{{n+1}}:
         image: {{image}}:{{version}}
         container_name: redis{{name}}{{n+1}}
         ports:

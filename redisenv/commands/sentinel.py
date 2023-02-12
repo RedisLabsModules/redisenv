@@ -1,6 +1,6 @@
 import click
 import sys
-from ..env import EnvironmentHandler
+from ..env import SentinelHandler, SENTINEL_TYPE
 from ..envhelpers import _default_options, gensentinelspec, gensentinelconf
 from . import defaultenvname
 
@@ -53,7 +53,6 @@ def sentinel():
     type=(str, str),
 )
 @click.option("--redisconf", "-c", help="redis instance configuration file")
-@click.option("--templatefile", "-t", help="sentinel base template")
 @click.option(
     "--user",
     "-u",
@@ -67,16 +66,22 @@ def sentinel():
 @click.option(
     "--sentinelopts",
     "-s",
-    help="redis options, quoted - thse are added to the generated, sentinel.conf",
+    help="sentinel options, quoted. If these are specified they fully override the defaults",
     multiple=True,
     type=str,
 )
 @click.option(
     "--redisopts",
     "-o",
-    help="redis options, quoted - thse are added to the generated, sentinel.conf",
+    help="redis options, quoted. These are the configuration options for the Redis (not sentinel) nodes",
     multiple=True,
     type=str,
+)
+@click.option(
+    "--docker-ip",
+    type=str,
+    default="172.0.0.1",
+    help="Set, to override the docker ip (i.e if you want to use an existing redis)",
 )
 @click.pass_context
 def create(
@@ -88,11 +93,11 @@ def create(
     image,
     mounts,
     redisconf,
-    templatefile,
     user,
     password,
     sentinelopts,
     redisopts,
+    docker_ip,
 ):
     """create and start a new environment"""
 
@@ -105,32 +110,29 @@ def create(
     from ..util import free_ports
 
     ports = free_ports(nodes)
-
-    sp = gensentinelspec(
-        name,
-        nodes,
-        version,
-        image,
-        mounts,
-        redisconf,
-        redisopts,
+    cfg = gensentinelconf(
         ports,
+        user,
+        password,
+        sentinelopts,
+        docker_ip,
     )
 
-    if templatefile != "":
-        cfg = gensentinelconf(
-            ports,
-            user,
-            password,
-            sentinelopts,
-            templatefile,
-        )
-    print(cfg)
-    sys.exit(3)
-    g = EnvironmentHandler(ctx.obj.get("DESTDIR"))
+    sp = gensentinelspec(
+        name=name,
+        nodes=nodes,
+        version=version,
+        image=image,
+        mounts=mounts,
+        redisconf=redisconf,
+        redisopts=redisopts,
+        ports=ports,
+    )
+
+    g = SentinelHandler(ctx.obj.get("DESTDIR"))
     if force:
         try:
             g.stop(name)
         except:
             pass
-    g.start(name, sp)
+    g.start(name, cfg, sp)

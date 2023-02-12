@@ -84,7 +84,6 @@ def gensentinelspec(
     image: str = _default_options["_image"],
     mounts: List = [],
     redisconf: str = "",
-    sentinelconfs: List = [],
     redisopts: List = [],
     ports: List = [],
 ) -> Dict:
@@ -98,7 +97,7 @@ def gensentinelspec(
     d["redisconf"] = redisconf
     d["image"] = image
     d["redisoptions"] = redisopts
-    d["sentineloptions"] = sentinelconfs
+    
     d["mounts"] = []
     for m in mounts:
         d["mounts"].append({"local": m[0], "remote": m[1]})
@@ -116,22 +115,17 @@ def gensentinelconf(
     user: str,
     password: str,
     sentinelopts: List = [],
-    templatefile: str = None,
+    docker_ip: str = "",
 ):
     here = os.path.join(os.path.dirname(__file__), "templates")
-    if templatefile is None:
-        tmpl = jinja2.FileSystemLoader(searchpath=here)
-        tenv = jinja2.Environment(loader=tmpl)
-    else:
-        tenv = jinja2.Environment(loader=jinja2.BaseLoader).from_string(
-            open(templatefile).read()
-        )
-    if templatefile is None:
-        tmpl = tenv.get_template("sentinel.conf.tmpl")
+    fsl = jinja2.FileSystemLoader(searchpath=here)
+    tenv = jinja2.Environment(loader=fsl)
+    tmpl = tenv.get_template("sentinel.conf.tmpl")
 
     conffiles = []
     for p in ports[1:]:
         context = {
+            "dockerhost": docker_ip,
             "sentinelport": p,
             "port": ports[0],
             "sentinel_user": user,

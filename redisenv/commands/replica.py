@@ -1,6 +1,6 @@
 import click
 import sys
-from ..env import EnvironmentHandler
+from ..env import EnvironmentHandler, REPLICAOF_TYPE
 from ..envhelpers import _default_options, genreplicaspec
 from . import defaultenvname
 
@@ -119,4 +119,4 @@ def create(
             g.stop(name)
         except:
             pass
-    g.start(name, sp, "replicaof")
+    g.start(name, sp, REPLICAOF_TYPE)
