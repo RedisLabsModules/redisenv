@@ -3,14 +3,27 @@ from loguru import logger
 import socket
 
 
-def free_ports(num: int) -> List:
+def free_ports(num: int, cluster: bool = False) -> List:
     """Find free ports, for the number of nodes specified
     starting at the base port.
     """
+    
     ports = []
-    for i in range(num):
+    while len(ports) != num:
         s = socket.socket()
         s.bind(("", 0))
-        ports.append(s.getsockname()[1])
+        port = s.getsockname()[1]
         s.close()
+        
+        # redis limitation
+        if port >= 55535:
+            continue
+        
+        s = socket.socket()
+        try:
+            s.bind(("", port+10000))
+        except OSError:  # port alread in use
+            continue
+        s.close()
+        ports.append(port)
     return ports

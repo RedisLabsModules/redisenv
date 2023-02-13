@@ -1,0 +1,8 @@
+{% for r in redisopts %}
+{{r}}
+{% endfor %}
+port {{port}}
+cluster-enabled yes
+daemonize yes
+logfile /redis.log
+dir /nodes/{{port}}

@@ -41,7 +41,7 @@ def standalone():
 @click.option(
     "--mounts",
     "-M",
-    help="directories to mount into the dockers (local remote)",
+    help="directories to mount into all dockers (local remote)",
     multiple=True,
     type=(str, str),
 )
@@ -73,7 +73,7 @@ def create(ctx, name, force, nodes, version, image, mounts, conffile, ipv6, redi
         name,
         nodes,
         version,
-        "redis",
+        image,
         mounts,
         conffile,
         ipv6,

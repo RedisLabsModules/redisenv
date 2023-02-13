@@ -9,6 +9,7 @@ import subprocess
 SENTINEL_TYPE = "sentinel"
 STANDALONE_TYPE = "standalone"
 REPLICAOF_TYPE = "replicaof"
+CLUSTER_TYPE = "cluster"
 
 
 class EnvironmentHandler:
@@ -51,7 +52,7 @@ class EnvironmentHandler:
     @property
     def envdir(self):
         return self._ENVDIR
-
+    
     def _envfile(self, name: str):
         return os.path.join(self.envdir, f"{name}.yml")
 
@@ -67,12 +68,16 @@ class EnvironmentHandler:
         # add the environment here
         tmpl = jinja2.FileSystemLoader(searchpath=here)
         tenv = jinja2.Environment(loader=tmpl, trim_blocks=True)
+        
         if redistype == STANDALONE_TYPE:
             templatefile = "standalone.tmpl"
         elif redistype == REPLICAOF_TYPE:
             templatefile = "replica.tmpl"
         elif redistype == SENTINEL_TYPE:
             templatefile = "sentinel.tmpl"
+        elif redistype == CLUSTER_TYPE:
+            templatefile = "cluster.tmpl"
+            
         tmpl = tenv.get_template(templatefile)
         with open(destfile, "w+") as fp:
             logger.debug(f"Writing {destfile}")
@@ -146,7 +151,7 @@ class SentinelHandler(EnvironmentHandler):
     """A wrapper, specificatlly for sentinel"""
     
     def _genconfigs(self, env_name, config_file_content):
-        """Generate the configuration files for the service"""
+        """Generate the configuration files for sentinel """
         
         count = 1
         for c in config_file_content:
@@ -157,8 +162,57 @@ class SentinelHandler(EnvironmentHandler):
             with open(os.path.join(confdest, "sentinel.conf"), "w+") as fp:
                 fp.write(c)
             
-    def start(self, name, config_file_content, config):
+    def start(self, env_name, config_file_content, config):
         """Generate the sentinel configs, then start it up"""
-        self._genconfigs(name, config_file_content)
-        self._generate(name, config, SENTINEL_TYPE)
-        self._start(name)
+        self._genconfigs(env_name, config_file_content)
+        self._generate(env_name, config, SENTINEL_TYPE)
+        self._start(env_name)
+        
+        
+class ClusterHandler(EnvironmentHandler):
+    """A wrapper, specifically for redis clusters"""
+    
+    def _get_clustermap(self, env_name, ports: List=[]) -> str:
+        nodemapfile = os.path.join(self.envdir, env_name, "configs", "nodemap")
+        with open(nodemapfile, "w+") as fp:
+            for p in ports:
+                fp.write(f"127.0.0.1:{p}\n")
+        return nodemapfile
+    
+    def _genconfigs(self, env_name: str, config_file_content: Dict):
+        """Generate the redis configuration file for the cluster node"""
+        for k, v in config_file_content.items():
+            confdest = os.path.join(self.envdir, env_name, "configs", k, "redis.conf")
+            os.makedirs(os.path.dirname(confdest), exist_ok=True)
+            with open(confdest, "w+") as fp:
+                fp.write(v)
+            
+    def _gen_cluster_script(self, env_name: str, ports: List, replicas: int) -> str:
+        
+        cluster_script = os.path.join(self.envdir, env_name, "start_cluster.sh")
+        
+        config = {'ports': ports,
+                  'replicas': replicas,
+        }
+        here = os.path.join(os.path.dirname(__file__), "templates")
+
+        # add the environment here
+        tmpl = jinja2.FileSystemLoader(searchpath=here)
+        tenv = jinja2.Environment(loader=tmpl, trim_blocks=True)
+        tmpl = tenv.get_template("start_cluster.sh.tmpl")
+        with open(cluster_script, "w+") as fp:
+            logger.debug(f"Writing {cluster_script}")
+            fp.write(tmpl.render(config))
+        
+        return cluster_script
+
+    def start(self, env_name: str, config_file_content: Dict, config: Dict):
+        os.makedirs(os.path.join(self.envdir, env_name, "configs"), exist_ok=True)
+        startscript = self._gen_cluster_script(env_name, config.get("ports"), config.get("replicas"))
+        nodemapfile = self._get_clustermap(env_name, config.get("ports"))
+        self._genconfigs(env_name, config_file_content)
+        config['nodemapfile'] = nodemapfile
+        config['startscript'] = startscript
+        self._generate(env_name, config, CLUSTER_TYPE)
+        
+        self._start(env_name)

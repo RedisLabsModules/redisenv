@@ -1,6 +1,8 @@
 import click
 import sys
 from ..env import SentinelHandler, SENTINEL_TYPE
+from ..util import free_ports
+
 from ..envhelpers import _default_options, gensentinelspec, gensentinelconf
 from . import defaultenvname
 
@@ -48,7 +50,7 @@ def sentinel():
 @click.option(
     "--mounts",
     "-M",
-    help="directories to mount into the dockers (local remote)",
+    help="directories to mount into all dockers (local remote)",
     multiple=True,
     type=(str, str),
 )
@@ -106,8 +108,6 @@ def create(
             "Exiting. At least 4 nodes are needed for this configuration.\n"
         )
         sys.exit(3)
-
-    from ..util import free_ports
 
     ports = free_ports(nodes)
     cfg = gensentinelconf(

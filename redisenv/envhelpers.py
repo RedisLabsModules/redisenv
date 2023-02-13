@@ -10,6 +10,7 @@ _default_options = {
     "_image": "redis",
     "_ipv6": False,
     "_docker_host_ip": "172.0.0.1",
+    "_cluster_replicas": 1,
 }
 
 
@@ -48,7 +49,7 @@ def genreplicaspec(
     nodes: int = _default_options["_nodes"],
     version: str = _default_options["_version"],
     image: str = _default_options["_image"],
-    mounts: List = [],
+    mounts: list = [],
     conffile: str = "",
     ipv6: bool = _default_options["_ipv6"],
     redisopts: List = [],
@@ -116,10 +117,10 @@ def gensentinelconf(
     password: str,
     sentinelopts: List = [],
     docker_ip: str = "",
-):
+) -> List:
     here = os.path.join(os.path.dirname(__file__), "templates")
     fsl = jinja2.FileSystemLoader(searchpath=here)
-    tenv = jinja2.Environment(loader=fsl)
+    tenv = jinja2.Environment(loader=fsl, trim_blocks=True)
     tmpl = tenv.get_template("sentinel.conf.tmpl")
 
     conffiles = []
@@ -134,3 +135,44 @@ def gensentinelconf(
         }
         conffiles.append(tmpl.render(context))
     return conffiles
+
+def genclusterconf(
+    ports: List,
+    redisopts: List = [],
+) -> Dict:
+    """Generates the cluster configuration file contents,
+    per cluster node"""
+    
+    here = os.path.join(os.path.dirname(__file__), "templates")
+    fsl = jinja2.FileSystemLoader(searchpath=here)
+    tenv = jinja2.Environment(loader=fsl, trim_blocks=True)
+    tmpl = tenv.get_template("cluster.conf.tmpl")
+
+    conffiles = {}
+    for p in ports:
+        context = {'port': p, 'redisopts': redisopts}
+        conffiles[str(p)] = tmpl.render(context)
+    return conffiles
+
+def genclusterspec(
+    name: str,
+    nodes: int = _default_options["_nodes"],
+    version: str = _default_options["_version"],
+    image: str = _default_options["_image"],
+    mounts: List = [],
+    ports: List = [],
+    replicas: int = _default_options["_cluster_replicas"],
+):
+    """Generate the docker-compose variables for the specified
+    cluster configuration."""
+    d = {"name": name}
+    d["nodes"] = nodes
+    d["version"] = version
+    d["image"] = image
+    d["mounts"] = []
+    d["ports"] = ports
+    d["replicas"] = replicas
+    for m in mounts:
+        d["mounts"].append({"local": m[0], "remote": m[1]})
+
+    return d

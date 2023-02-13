@@ -1,12 +1,13 @@
 import click
 import sys
-from ..env import EnvironmentHandler, REPLICAOF_TYPE
-from ..envhelpers import _default_options, genreplicaspec
+from ..env import ClusterHandler
+from ..util import free_ports
+from ..envhelpers import _default_options, genclusterconf, genclusterspec
 from . import defaultenvname
 
 
-def replica():
-    """for creating environments with collections of replicas"""
+def cluster():
+    """for creating an OSS redis cluster environment"""
 
 
 @click.command()
@@ -26,8 +27,8 @@ def replica():
 @click.option(
     "--nodes",
     "-n",
-    help="Number of nodes",
-    default=2,
+    help="Number of nodes, first node will be a standard redis node",
+    default=3,
     type=int,
     show_default=True,
 )
@@ -52,14 +53,6 @@ def replica():
     multiple=True,
     type=(str, str),
 )
-@click.option("--conffile", "-f", help="Config file")
-@click.option(
-    "--ipv6",
-    "-6",
-    help="enable ipv6",
-    is_flag=True,
-    default=_default_options["_ipv6"],
-)
 @click.option(
     "--redisopts",
     "-o",
@@ -68,16 +61,10 @@ def replica():
     type=str,
 )
 @click.option(
-    "--replicaof",
+    "--replicas",
+    help="number of replicas in the cluster",
+    default=_default_options['_cluster_replicas'],
     type=int,
-    default=-1,
-    help="If set nodes replicate the specified port, if not first node is replicated.",
-)
-@click.option(
-    "--docker-ip",
-    type=str,
-    default="172.0.0.1",
-    help="Set, to override the  docker ip (mostly used with the replicaof options)",
 )
 @click.pass_context
 def create(
@@ -88,35 +75,44 @@ def create(
     version,
     image,
     mounts,
-    conffile,
-    ipv6,
     redisopts,
-    replicaof,
-    docker_ip,
+    replicas,
 ):
     """create and start a new environment"""
-    if replicaof == -1:
-        if nodes < 2:
-            sys.stderr.write("To configure replicas, at least two nodes are needed.\n")
-            sys.exit(3)
 
-    sp = genreplicaspec(
+    if nodes < 3:
+        sys.stderr.write(
+            "Exiting. At least 3 nodes are needed for this configuration.\n"
+        )
+        sys.exit(3)
+        
+    if replicas >= nodes:
+        sys.stderr.write(
+            "There must be fewer replicas than nodes.\n"
+        )
+        sys.exit(3)
+
+
+    ports = free_ports(nodes, cluster=True)
+    cfg = genclusterconf(
+        ports,
+        redisopts
+    )
+    
+    sp = genclusterspec(
         name,
         nodes,
         version,
         image,
         mounts,
-        conffile,
-        ipv6,
-        redisopts,
-        replicaof,
-        docker_ip,
+        ports,
+        replicas,
     )
 
-    g = EnvironmentHandler(ctx.obj.get("DESTDIR"))
+    g = ClusterHandler(ctx.obj.get("DESTDIR"))
     if force:
         try:
             g.stop(name)
         except:
             pass
-    g.start(name, sp, REPLICAOF_TYPE)
+    g.start(name, cfg, sp)

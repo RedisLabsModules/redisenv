@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -x
+
+{% for p in ports %}
+redis-server /nodes/{{p}}/redis.conf
+{% endfor %}
+
+echo yes | redis-cli --cluster create {% for p in ports%} 127.0.0.1:{{p}} {% endfor %} --cluster-replicas {{replicas}}
+tail -f /redis.log

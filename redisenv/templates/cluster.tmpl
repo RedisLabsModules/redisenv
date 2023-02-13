@@ -1,0 +1,24 @@
+---
+
+version: "2.1"
+
+services:
+    rediscluster_{{name}}:
+        image: {{image}}:{{version}}
+        container_name: cluster_{{name}}
+        ports:
+{% for p in ports %}
+            - "{{p}}:{{p}}"
+{% endfor %}
+
+        volumes:
+            - "{{startscript}}:/start_cluster.sh"
+            - "{{nodemapfile}}:/nodes/nodemap"
+{% for p in ports %}
+            - "./{{name}}/configs/{{p}}/redis.conf:/nodes/{{p}}/redis.conf"
+{% endfor %}
+{% for m in mounts %}
+            - {{m['local']}}:{{m['remote']}}
+{% endfor %}
+
+        command: bash /start_cluster.sh
