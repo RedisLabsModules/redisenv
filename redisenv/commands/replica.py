@@ -2,13 +2,12 @@ import sys
 
 import click
 
-from ..env import REPLICAOF_TYPE, EnvironmentHandler
-from ..envhelpers import _default_options, genreplicaspec
+from ..env import REPLICAOF_TYPE, ReplicaHandler, _default_options
 from . import defaultenvname
 
 
 def replica():
-    """for creating environments with collections of replicas"""
+    """creating an environment containing redis replicas"""
 
 
 @click.command()
@@ -102,7 +101,8 @@ def create(
             sys.stderr.write("To configure replicas, at least two nodes are needed.\n")
             sys.exit(3)
 
-    sp = genreplicaspec(
+    g = ReplicaHandler(ctx.obj.get("DESTDIR"))
+    sp = g.gen_spec(
         name,
         nodes,
         version,
@@ -115,7 +115,6 @@ def create(
         docker_ip,
     )
 
-    g = EnvironmentHandler(ctx.obj.get("DESTDIR"))
     if force:
         try:
             g.stop(name)

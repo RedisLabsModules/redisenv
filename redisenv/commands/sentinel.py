@@ -2,14 +2,13 @@ import sys
 
 import click
 
-from ..env import SENTINEL_TYPE, SentinelHandler
-from ..envhelpers import _default_options, gensentinelconf, gensentinelspec
+from ..env import SentinelHandler, _default_options
 from ..util import free_ports
 from . import defaultenvname
 
 
 def sentinel():
-    """for creating a redis-sentinel environment"""
+    """create a redis-sentinel environment"""
 
 
 @click.command()
@@ -111,7 +110,9 @@ def create(
         sys.exit(3)
 
     ports = free_ports(nodes)
-    cfg = gensentinelconf(
+    g = SentinelHandler(ctx.obj.get("DESTDIR"))
+
+    cfg = g.gen_config(
         ports,
         user,
         password,
@@ -119,7 +120,7 @@ def create(
         docker_ip,
     )
 
-    sp = gensentinelspec(
+    sp = g.gen_spec(
         name=name,
         nodes=nodes,
         version=version,
@@ -130,7 +131,6 @@ def create(
         ports=ports,
     )
 
-    g = SentinelHandler(ctx.obj.get("DESTDIR"))
     if force:
         try:
             g.stop(name)

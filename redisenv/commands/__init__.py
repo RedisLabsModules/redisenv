@@ -125,6 +125,6 @@ def listenvs(ctx, generated):
 )
 @click.pass_context
 def ports(ctx, name):
-    """List the ports generated for an environment"""
+    """list the ports generated for an environment"""
     g = EnvironmentHandler(ctx.obj.get("DESTDIR"))
     g.listports(name)
