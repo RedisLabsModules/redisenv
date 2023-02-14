@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "redisenv"
 version = "0.1.0"
-description = ""
+description = "A tool for building redis test environments"
 authors = ["Redis OSS <oss@redis.io>"]
 readme = "README.md"
 license = "MIT"
@@ -19,7 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "License :: OSI Approved :: MIT License",
-    "Development Status :: 4 - Beta",
+    "Development Status :: 3 - Alpha",
 ]
 
 [tool.poetry.urls]

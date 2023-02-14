@@ -1,8 +1,10 @@
-import click
 import sys
+
+import click
+
 from ..env import ClusterHandler
-from ..util import free_ports
 from ..envhelpers import _default_options, genclusterconf, genclusterspec
+from ..util import free_ports
 from . import defaultenvname
 
 
@@ -63,7 +65,7 @@ def cluster():
 @click.option(
     "--replicas",
     help="number of replicas in the cluster",
-    default=_default_options['_cluster_replicas'],
+    default=_default_options["_cluster_replicas"],
     type=int,
 )
 @click.pass_context
@@ -85,20 +87,14 @@ def create(
             "Exiting. At least 3 nodes are needed for this configuration.\n"
         )
         sys.exit(3)
-        
+
     if replicas >= nodes:
-        sys.stderr.write(
-            "There must be fewer replicas than nodes.\n"
-        )
+        sys.stderr.write("There must be fewer replicas than nodes.\n")
         sys.exit(3)
 
-
     ports = free_ports(nodes, cluster=True)
-    cfg = genclusterconf(
-        ports,
-        redisopts
-    )
-    
+    cfg = genclusterconf(ports, redisopts)
+
     sp = genclusterspec(
         name,
         nodes,

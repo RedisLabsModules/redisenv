@@ -1,6 +1,8 @@
-import click
 import sys
-from ..env import EnvironmentHandler, STANDALONE_TYPE
+
+import click
+
+from ..env import STANDALONE_TYPE, EnvironmentHandler
 from ..envhelpers import _default_options, genstandalonespec
 from . import defaultenvname
 
@@ -67,7 +69,19 @@ def standalone():
     help="Set, to override the  docker ip (i.e if you want to use an existing redis)",
 )
 @click.pass_context
-def create(ctx, name, force, nodes, version, image, mounts, conffile, ipv6, redisopts, docker_ip):
+def create(
+    ctx,
+    name,
+    force,
+    nodes,
+    version,
+    image,
+    mounts,
+    conffile,
+    ipv6,
+    redisopts,
+    docker_ip,
+):
     """create and start a new environment"""
     sp = genstandalonespec(
         name,
