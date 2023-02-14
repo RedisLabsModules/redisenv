@@ -67,9 +67,7 @@ def pause(ctx, name):
     g.pause(name)
 
 
-cli.command()
-
-
+@cli.command()
 @click.option(
     "--name",
     help="environment name",
@@ -124,5 +122,6 @@ def listenvs(ctx, generated):
 )
 @click.pass_context
 def ports(ctx, name):
+    """List the ports generated for an environment"""
     g = EnvironmentHandler(ctx.obj.get("DESTDIR"))
     g.listports(name)

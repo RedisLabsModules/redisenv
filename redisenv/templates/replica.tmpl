@@ -10,33 +10,34 @@ networks:
 {% endif %}
 
 services:
-    {% for n in range(nodes) %}
+
+{% for n in range(nodes) %}
     redis_{{name}}_{{n+1}}:
-        image: {{image}}:{{version}}
+        image: "{{image}}:{{version}}"
         container_name: redis{{name}}{{n+1}}
         ports:
             - "{{ports[n]}}:{{listening_port}}"
-        {% if redisoptions|length != 0 or conffile != None %} 
+{% if redisoptions|length != 0 or conffile != None %} 
         volumes:
-        {% for m in mounts %}
+{% for m in mounts %}
             - {{m['local']}}:{{m['remote']}}
-        {% endfor %}
-        {% endif %}
-        {% if conffile != none %}
+{% endfor %}
+{% endif %}
+{% if conffile != none %}
             - {{conffile}}:/usr/local/etc/redis/redis.conf
-        {% endif %}
+{% endif %}
 
-        {% if ipv6 %}
+{% if ipv6 %}
         networks:
             - {{name}}_ipv6net
-        {% endif %}
-        {% if replicaof == -1 %}
-        {% if n == 0 %}
+{% endif %}
+{% if replicaof == -1 %}
+{% if n == 0 %}
         command: redis-server {{ ' '.join(redisoptions)|safe }}
-        {% else %}
+{% else %}
         command: redis-server --replicaof redis{{name}}1 6379 {{ redisoptions|join(' ')}}
-        {% endif %}
-        {% else %}
+{% endif %}
+{% else %}
         command: redis-server --replicaof {{dockerhost}} {{replicaof}} {{ redisoptions|join(' ')}}
-        {% endif %}
-    {% endfor%}
+{% endif %}
+{% endfor%}

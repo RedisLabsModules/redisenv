@@ -1,4 +1,4 @@
-name: IntegrationA
+name: Integration
 
 on:
   pull_request:

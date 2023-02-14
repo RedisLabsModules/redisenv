@@ -36,8 +36,9 @@ class EnvironmentHandler:
         d = yaml.safe_load(open(self._getenv(name)))
         ports = {}
         for k, i in d.get("services").items():
-            port = int(i["ports"][0].split(":")[0])
-            ports[k] = {"port": port, "connstr": f"redis://localhost:{port}"}
+            for p in i["ports"]:
+                port = p.split(":")[0]
+                ports[k] = {"port": port, "connstr": f"redis://localhost:{port}"}
 
         if output:
             print(json.dumps(ports))
@@ -106,10 +107,10 @@ class EnvironmentHandler:
 
     def pause(self, name: str):
         """Pause, the specified environment"""
-        cmd = ["docker-compose", "-f", self._envfile, "pause"]
+        cmd = ["docker-compose", "-f", self._envfile(name), "pause"]
+        logger.info(f"Pausing environment {name}")
+
         try:
-            logger.info(f"Pausing environment {name}")
-            logger.debug(" ".join(cmd))
             subprocess.run(cmd, check=True)
         except:
             logger.critical(f"Failed to pause environment {name}")
@@ -117,10 +118,10 @@ class EnvironmentHandler:
 
     def unpause(self, name: str):
         """Unpause, the specified environment"""
-        cmd = ["docker-compose", "-f", self._envfile, "unpause"]
+        cmd = ["docker-compose", "-f", self._envfile(name), "unpause"]
+        logger.info(f"Unpausing environment {name}")
+
         try:
-            logger.info(f"Unpausing environment {name}")
-            logger.debug(" ".join(cmd))
             subprocess.run(cmd, check=True)
         except:
             logger.critical(f"Failed to pause environment {name}")
@@ -128,7 +129,7 @@ class EnvironmentHandler:
 
     def restart(self, name: str):
         """Restart, the specified environment"""
-        cmd = ["docker-compose", "-f", self._envfile, "restart"]
+        cmd = ["docker-compose", "-f", self._envfile(name), "restart"]
         try:
             logger.info(f"Restarting environment {name}")
             logger.debug(" ".join(cmd))
@@ -138,7 +139,7 @@ class EnvironmentHandler:
             raise
 
     def stop(self, name: str):
-        """Stop the named environment"""
+        """Stop the named environment, and remove the generated artifacts"""
         cmd = ["docker-compose", "-f", self._envfile(name), "rm", "-s", "-f"]
         try:
             logger.info(f"Starting environment {name} via docker-compose")
