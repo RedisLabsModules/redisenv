@@ -1,34 +1,44 @@
-name: Publish tag to Pypi
-
+name: Publish Pypi
 on:
   release:
-    types: [published]
-
-permissions:
-  contents: read  #  to fetch code (actions/checkout)
+    types: [ published ]
 
 jobs:
-
-  build_and_package:
+  pytest:
+    name: Publish to PyPi
     runs-on: ubuntu-latest
+    env:
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
     steps:
-      - uses: actions/checkout@v3
-      - name: install python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
-      - name: Install dev tools
-        run: |
-          pip install -r dev_requirements.txt
-          pip install twine wheel
+      - uses: actions/checkout@master
 
-      - name: Build package
-        run: |
-          python setup.py build
-          python setup.py sdist bdist_wheel
-
-      - name: Publish to Pypi
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v1
         with:
-          user: __token__
-          password: ${{ secrets.PYPI_TOKEN }}
+          python-version: 3.8
+
+      - name: Install Poetry
+        uses: dschep/install-poetry-action@v1.3
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v1
+        id: cache
+        with:
+          path: ~/.virtualenvs
+          key: poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            poetry-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Set Poetry config
+        run: |
+          poetry config virtualenvs.in-project false
+          poetry config virtualenvs.path ~/.virtualenvs
+
+      - name: Install Dependencies
+        run: poetry install
+        if: steps.cache.outputs.cache-hit != 'true'
+
+      - name: Publish to PyPI
+        if: github.event_name == 'release'
+        run: |
+          poetry publish -u __token__ -p ${{ secrets.PYPI_TOKEN }} --build
