@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import click
 from loguru import logger
@@ -51,6 +52,10 @@ def destroy(ctx, name):
     """destroy an environment"""
     g = EnvironmentHandler(ctx.obj.get("DESTDIR"))
     g.stop(name)
+    os.unlink(g._envfile(name))
+    tree = os.path.join(g.envdir, name)
+    if os.path.isdir(tree):
+        shutil.rmtree(tree)
 
 
 @cli.command()

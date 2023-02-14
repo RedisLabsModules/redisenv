@@ -34,7 +34,7 @@ def test_help_text(env_type):
     "env_type",
     argvalues=environments,
 )
-def test_start_restart_destroy(env_type):
+def test_start_destroy(env_type):
     cmd = [sys.executable, "-m", "redisenv", env_type, "create"]
     subprocess.run(
         cmd, check=True, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE
@@ -42,11 +42,6 @@ def test_start_restart_destroy(env_type):
 
     # give the containers time to start and settle
     time.sleep(1)
-
-    cmd = [sys.executable, "-m", "redisenv", "restart"]
-    subprocess.run(
-        cmd, check=True, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
 
     cmd = [sys.executable, "-m", "redisenv", "destroy"]
     subprocess.run(

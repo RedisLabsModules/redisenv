@@ -28,7 +28,8 @@ class EnvironmentHandler:
             logger.info(f"No environments found in {self.envdir}")
             return
         for x in os.listdir(self.envdir):
-            logger.info(x)
+            if x[-4:] == ".yml":
+                logger.info(x)
 
     def listports(self, name, output=True):
         """Output the ports (as json) for the specified environment
