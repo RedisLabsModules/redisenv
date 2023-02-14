@@ -5,7 +5,6 @@ import click
 from loguru import logger
 
 from ..env import EnvironmentHandler
-from ..validator import checkenv
 
 defaultenvname = "myenv"
 
@@ -37,7 +36,6 @@ def cli(ctx, debug, quiet, dest, templates):
         logger.level("DEBUG")
     if quiet:
         logger.level("CRITICAL")
-    checkenv()
 
 
 @cli.command()
