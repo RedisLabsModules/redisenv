@@ -1,11 +1,22 @@
 # redisenv
 
-A library to make it easy to run redis instances. This tool is a wrapper around [docker](https://docs.docker.com) and [docker-compose](https://docs.docker.com/compose/), and runs all instances within docker.
-
-[![CI](https://github.com/RedisLabsModules/redisenv/actions/workflows/integration.yml/badge.svg)](https://github.com/RedisLabsModules/redisenv/actions/workflows/integration.yml)
-[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![pypi](https://badge.fury.io/py/redisenv.svg)](https://pypi.org/project/redisenv/)
+[![CI](https://github.com/RedisLabsModules/redisenv/actions/workflows/integration.yml/badge.svg)](https://github.com/RedisLabsModules/redisenv/actions/workflows/integration.yml)
 
+redisenv is library that makes generating redis test environments easier. This tool generates [docker-compose](https://docs.docker.com/compose/) files, and runs all instances within docker.  Generated docker instances select a random port, based on the available free ports, and when running ```redisenv ports```, a json parseable string of the build connections is outputted.
+
+Currently redisenv supports:
+
+* Redis standalone
+
+* Redis Sentinel
+
+* Redis Clusters
+
+* Redis masters with replicas
+
+----
 
 ## Installation
 
@@ -28,13 +39,13 @@ redisenv --help
 Start an environment named foo, with one container:
 
 ```bash
-redisenv --name foo create -n 1
+redisenv --name foo standalone create --nodes 1
 ```
 
 Start an environment with the redisbloom module, downloaded into a folder named modules. Note - you need the full *local* path to the directory.
 
 ```bash
-redisenv --name foo create -n 1 -M `pwd`/modules /modules -o "--loadmodule /modules/redisbloom.so"
+redisenv --name foo standalone create -n 1 -M `pwd`/modules /modules -o "--loadmodule /modules/redisbloom.so"
 ```
 
 Destroy the environment named foo:

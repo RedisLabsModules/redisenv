@@ -1,4 +1,5 @@
-if __name__ == "__main__":
+# This layout exists, specifically to make poetry+extras work
+def main():
     from .commands import cli, cluster, replica, sentinel, standalone
 
     cli.group(standalone.standalone).add_command(standalone.create)
@@ -10,3 +11,6 @@ if __name__ == "__main__":
     cli.group(cluster.cluster).add_command(cluster.create)
 
     cli()
+    
+if __name__ == "__main__":
+    main()
