@@ -12,6 +12,13 @@ jobs:
       matrix:
         os: ['ubuntu-latest', 'macos-latest']
     steps:
+      # https://github.com/orgs/community/discussions/25777#discussioncomment-3249229
+      - uses: docker-practice/actions-setup-docker@master
+        if: runner.os == 'macOS'
+        timeout-minutes: 12
+
+      - uses: KengoTODA/actions-setup-docker-compose@v1
+
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
       - name: install dependencies
