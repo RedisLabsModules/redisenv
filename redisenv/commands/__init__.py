@@ -1,8 +1,10 @@
-import click
 import os
+import shutil
+
+import click
 from loguru import logger
+
 from ..env import EnvironmentHandler
-from ..validator import checkenv
 
 defaultenvname = "myenv"
 
@@ -34,7 +36,6 @@ def cli(ctx, debug, quiet, dest, templates):
         logger.level("DEBUG")
     if quiet:
         logger.level("CRITICAL")
-    checkenv()
 
 
 @cli.command()
@@ -49,6 +50,10 @@ def destroy(ctx, name):
     """destroy an environment"""
     g = EnvironmentHandler(ctx.obj.get("DESTDIR"))
     g.stop(name)
+    os.unlink(g._envfile(name))
+    tree = os.path.join(g.envdir, name)
+    if os.path.isdir(tree):
+        shutil.rmtree(tree)
 
 
 @cli.command()
@@ -65,9 +70,7 @@ def pause(ctx, name):
     g.pause(name)
 
 
-cli.command()
-
-
+@cli.command()
 @click.option(
     "--name",
     help="environment name",
@@ -122,5 +125,6 @@ def listenvs(ctx, generated):
 )
 @click.pass_context
 def ports(ctx, name):
+    """List the ports generated for an environment"""
     g = EnvironmentHandler(ctx.obj.get("DESTDIR"))
     g.listports(name)

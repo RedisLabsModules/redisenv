@@ -2,6 +2,11 @@
 
 A library to make it easy to run redis instances. This tool is a wrapper around [docker](https://docs.docker.com) and [docker-compose](https://docs.docker.com/compose/), and runs all instances within docker.
 
+[![CI](https://github.com/RedisLabsModules/redisenv/actions/workflows/integration.yml/badge.svg)](https://github.com/RedisLabsModules/redisenv/actions/workflows/integration.yml)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE
+[![pypi](https://badge.fury.io/py/redisenv.svg)](https://pypi.org/project/redisenv/)
+
+
 ## Installation
 
 ### Requirements
@@ -11,7 +16,6 @@ A library to make it easy to run redis instances. This tool is a wrapper around 
 * docker-compose
 
 * docker
-
 
 ## Usage
 

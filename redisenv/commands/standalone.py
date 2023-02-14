@@ -1,6 +1,8 @@
-import click
 import sys
-from ..env import EnvironmentHandler, STANDALONE_TYPE
+
+import click
+
+from ..env import STANDALONE_TYPE, EnvironmentHandler
 from ..envhelpers import _default_options, genstandalonespec
 from . import defaultenvname
 
@@ -39,6 +41,13 @@ def standalone():
     show_default=True,
 )
 @click.option(
+    "--image",
+    "-i",
+    help="Set, to specify a source docker image (without tag)",
+    show_default=True,
+    default=_default_options["_image"],
+)
+@click.option(
     "--mounts",
     "-M",
     help="directories to mount into all dockers (local remote)",
@@ -60,14 +69,19 @@ def standalone():
     multiple=True,
     type=str,
 )
-@click.option(
-    "--docker-ip",
-    type=str,
-    default="172.0.0.1",
-    help="Set, to override the  docker ip (i.e if you want to use an existing redis)",
-)
 @click.pass_context
-def create(ctx, name, force, nodes, version, image, mounts, conffile, ipv6, redisopts, docker_ip):
+def create(
+    ctx,
+    name,
+    force,
+    nodes,
+    version,
+    image,
+    mounts,
+    conffile,
+    ipv6,
+    redisopts,
+):
     """create and start a new environment"""
     sp = genstandalonespec(
         name,
@@ -78,7 +92,6 @@ def create(ctx, name, force, nodes, version, image, mounts, conffile, ipv6, redi
         conffile,
         ipv6,
         redisopts,
-        docker_ip,
     )
     g = EnvironmentHandler(ctx.obj.get("DESTDIR"))
     if force:

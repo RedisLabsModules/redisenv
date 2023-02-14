@@ -1,9 +1,10 @@
-import click
 import sys
-from ..env import SentinelHandler, SENTINEL_TYPE
-from ..util import free_ports
 
-from ..envhelpers import _default_options, gensentinelspec, gensentinelconf
+import click
+
+from ..env import SENTINEL_TYPE, SentinelHandler
+from ..envhelpers import _default_options, gensentinelconf, gensentinelspec
+from ..util import free_ports
 from . import defaultenvname
 
 

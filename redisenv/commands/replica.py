@@ -1,6 +1,8 @@
-import click
 import sys
-from ..env import EnvironmentHandler, REPLICAOF_TYPE
+
+import click
+
+from ..env import REPLICAOF_TYPE, EnvironmentHandler
 from ..envhelpers import _default_options, genreplicaspec
 from . import defaultenvname
 

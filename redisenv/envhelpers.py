@@ -1,8 +1,9 @@
-from typing import List, Dict
-from .util import free_ports
-import jinja2
 import os
+from typing import Dict, List
 
+import jinja2
+
+from .util import free_ports
 
 _default_options = {
     "_nodes": 1,
@@ -98,7 +99,7 @@ def gensentinelspec(
     d["redisconf"] = redisconf
     d["image"] = image
     d["redisoptions"] = redisopts
-    
+
     d["mounts"] = []
     for m in mounts:
         d["mounts"].append({"local": m[0], "remote": m[1]})
@@ -136,13 +137,14 @@ def gensentinelconf(
         conffiles.append(tmpl.render(context))
     return conffiles
 
+
 def genclusterconf(
     ports: List,
     redisopts: List = [],
 ) -> Dict:
     """Generates the cluster configuration file contents,
     per cluster node"""
-    
+
     here = os.path.join(os.path.dirname(__file__), "templates")
     fsl = jinja2.FileSystemLoader(searchpath=here)
     tenv = jinja2.Environment(loader=fsl, trim_blocks=True)
@@ -150,9 +152,10 @@ def genclusterconf(
 
     conffiles = {}
     for p in ports:
-        context = {'port': p, 'redisopts': redisopts}
+        context = {"port": p, "redisopts": redisopts}
         conffiles[str(p)] = tmpl.render(context)
     return conffiles
+
 
 def genclusterspec(
     name: str,

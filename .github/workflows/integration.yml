@@ -1,0 +1,45 @@
+name: Integration
+
+on:
+  pull_request:
+
+jobs:
+  build_and_test:
+    name: Test
+    runs-on: ${{matrix.os}}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest', 'macos-latest']
+    steps:
+      # https://github.com/orgs/community/discussions/25777#discussioncomment-3249229
+      - uses: docker-practice/actions-setup-docker@master
+        if: runner.os == 'macOS'
+        timeout-minutes: 12
+
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+      - name: install dependencies
+        run: |
+          pip install --upgrade pip setuptools poetry
+          poetry config virtualenvs.create false
+          poetry install
+
+      - name: cache
+        uses: actions/cache@v3
+        with:
+          key: ${{runner.os }}-pip-${{hashFiles('pyproject.toml')}}
+          restore-keys: |
+            ${{runner.os}}-pip-
+          path: |
+            ~/.pip
+            ~/.cache/pip
+            ~/.cache/poetry
+
+      - name: run tests
+        run: |
+          pytest
+
+      - name: build package
+        run: |
+          poetry build
