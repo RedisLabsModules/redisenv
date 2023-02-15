@@ -3,3 +3,4 @@ redis
 pypi
 redisenv
 redisbloom
+JSON
