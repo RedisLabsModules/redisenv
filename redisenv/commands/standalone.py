@@ -2,13 +2,13 @@ import sys
 
 import click
 
-from ..env import STANDALONE_TYPE, EnvironmentHandler
-from ..envhelpers import _default_options, genstandalonespec
+from ..env import STANDALONE_TYPE, StandaloneHandler, _default_options
+from ..composer import DockerComposeWrapper
 from . import defaultenvname
 
 
 def standalone():
-    """for creating an environment based on standalone redis"""
+    """create an environment with standalone redis nodes"""
 
 
 @click.command()
@@ -83,7 +83,11 @@ def create(
     redisopts,
 ):
     """create and start a new environment"""
-    sp = genstandalonespec(
+
+    g = StandaloneHandler(ctx.obj.get("DESTDIR"), name)
+
+    w = DockerComposeWrapper(g)
+    sp = g.gen_spec(
         name,
         nodes,
         version,
@@ -93,10 +97,9 @@ def create(
         ipv6,
         redisopts,
     )
-    g = EnvironmentHandler(ctx.obj.get("DESTDIR"))
     if force:
         try:
-            g.stop(name)
+            w.stop()
         except:
             pass
-    g.start(name, sp, STANDALONE_TYPE)
+    g.start(sp, STANDALONE_TYPE)

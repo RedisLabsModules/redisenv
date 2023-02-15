@@ -3,6 +3,7 @@ import shutil
 
 import click
 from loguru import logger
+from ..composer import DockerComposeWrapper
 
 from ..env import EnvironmentHandler
 
@@ -48,9 +49,10 @@ def cli(ctx, debug, quiet, dest, templates):
 @click.pass_context
 def destroy(ctx, name):
     """destroy an environment"""
-    g = EnvironmentHandler(ctx.obj.get("DESTDIR"))
-    g.stop(name)
-    os.unlink(g._envfile(name))
+    g = EnvironmentHandler(ctx.obj.get("DESTDIR"), name)
+    w = DockerComposeWrapper(g)
+    w.stop()
+    os.unlink(g.envfile)
     tree = os.path.join(g.envdir, name)
     if os.path.isdir(tree):
         shutil.rmtree(tree)
@@ -66,8 +68,9 @@ def destroy(ctx, name):
 @click.pass_context
 def pause(ctx, name):
     """pause an environment"""
-    g = EnvironmentHandler(ctx.obj.get("DESTDIR"))
-    g.pause(name)
+    g = EnvironmentHandler(ctx.obj.get("DESTDIR"), name)
+    w = DockerComposeWrapper(g)
+    w.pause()
 
 
 @cli.command()
@@ -80,8 +83,9 @@ def pause(ctx, name):
 @click.pass_context
 def unpause(ctx, name):
     """unpause an environment"""
-    g = EnvironmentHandler(ctx.obj.get("DESTDIR"))
-    g.unpause(name)
+    g = EnvironmentHandler(ctx.obj.get("DESTDIR"), name)
+    w = DockerComposeWrapper(g)
+    w.unpause()
 
 
 @cli.command()
@@ -94,25 +98,16 @@ def unpause(ctx, name):
 @click.pass_context
 def restart(ctx, name):
     """restart an environment"""
-    g = EnvironmentHandler(ctx.obj.get("DESTDIR"))
-    g.restart(name)
+    g = EnvironmentHandler(ctx.obj.get("DESTDIR"), name)
+    w = DockerComposeWrapper(g)
+    w.restart()
 
 
 @cli.command()
-@click.option(
-    "--generated",
-    "-g",
-    help="set, to list generated environments (instead of templates)",
-    is_flag=True,
-)
 @click.pass_context
-def listenvs(ctx, generated):
+def listenvs(ctx):
     """list environments"""
-    if generated:
-        envdir = ctx.obj.get("DESTDIR")
-    else:
-        envdir = ctx.obj.get("TEMPLATEDIR")
-    g = EnvironmentHandler(envdir)
+    g = EnvironmentHandler(ctx.obj.get("DESTDIR"), "")
     g.listenvs()
 
 
@@ -125,6 +120,6 @@ def listenvs(ctx, generated):
 )
 @click.pass_context
 def ports(ctx, name):
-    """List the ports generated for an environment"""
-    g = EnvironmentHandler(ctx.obj.get("DESTDIR"))
-    g.listports(name)
+    """list the ports generated for an environment"""
+    g = EnvironmentHandler(ctx.obj.get("DESTDIR"), name)
+    g.listports()

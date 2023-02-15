@@ -2,9 +2,9 @@ import sys
 
 import click
 
-from ..env import ClusterHandler
-from ..envhelpers import _default_options, genclusterconf, genclusterspec
+from ..env import ClusterHandler, _default_options
 from ..util import free_ports
+from ..composer import DockerComposeWrapper
 from . import defaultenvname
 
 
@@ -93,10 +93,12 @@ def create(
         sys.exit(3)
 
     ports = free_ports(nodes, cluster=True)
-    cfg = genclusterconf(ports, redisopts)
+    g = ClusterHandler(ctx.obj.get("DESTDIR"), name)
+    w = DockerComposeWrapper(g)
 
-    sp = genclusterspec(
-        name,
+    cfg = g.gen_config(ports, redisopts)
+
+    sp = g.gen_spec(
         nodes,
         version,
         image,
@@ -105,10 +107,9 @@ def create(
         replicas,
     )
 
-    g = ClusterHandler(ctx.obj.get("DESTDIR"))
     if force:
         try:
-            g.stop(name)
+            w.stop()
         except:
             pass
-    g.start(name, cfg, sp)
+    g.start(cfg, sp)
