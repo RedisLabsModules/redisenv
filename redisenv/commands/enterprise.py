@@ -1,12 +1,14 @@
-from ..env import EnterpriseClusterHandler, _default_options, ENTERPRISE_CLUSTER_TYPE
 import socket
+import sys
+
+import click
 from loguru import logger
 
-from . import defaultenvname
-import sys
-import click
-from ..util import free_ports
 from ..composer import DockerComposeWrapper
+from ..env import (ENTERPRISE_CLUSTER_TYPE, EnterpriseClusterHandler,
+                   _default_options)
+from ..util import free_ports
+from . import defaultenvname
 
 
 def enterprise():

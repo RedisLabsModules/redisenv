@@ -1,14 +1,15 @@
 import json
-import time
 import os
 import subprocess
-import docker
+import time
 from typing import Dict, List, Optional
-from .util import free_ports
 
+import docker
 import jinja2
 import yaml
 from loguru import logger
+
+from .util import free_ports
 
 SENTINEL_TYPE = "sentinel"
 STANDALONE_TYPE = "standalone"

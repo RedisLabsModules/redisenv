@@ -1,6 +1,7 @@
 # This layout exists, specifically to make poetry+extras work
 def main():
-    from .commands import cli, cluster, replica, sentinel, standalone, enterprise
+    from .commands import (cli, cluster, enterprise, replica, sentinel,
+                           standalone)
 
     cli.group(standalone.standalone).add_command(standalone.create)
 

@@ -2,8 +2,8 @@ import sys
 
 import click
 
-from ..env import STANDALONE_TYPE, StandaloneHandler, _default_options
 from ..composer import DockerComposeWrapper
+from ..env import STANDALONE_TYPE, StandaloneHandler, _default_options
 from . import defaultenvname
 
 

@@ -3,8 +3,8 @@ import shutil
 
 import click
 from loguru import logger
-from ..composer import DockerComposeWrapper
 
+from ..composer import DockerComposeWrapper
 from ..env import EnvironmentHandler
 
 defaultenvname = "myenv"
