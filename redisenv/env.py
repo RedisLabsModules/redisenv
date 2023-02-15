@@ -27,6 +27,16 @@ _default_options = {
 }
 
 
+_default_options = {
+    "_nodes": 1,
+    "_version": "6.2.8",
+    "_image": "redis",
+    "_ipv6": False,
+    "_docker_host_ip": "172.0.0.1",
+    "_cluster_replicas": 1,
+}
+
+
 class EnvironmentHandler:
     """Environment"""
 
