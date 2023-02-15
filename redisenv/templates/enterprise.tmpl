@@ -1,0 +1,28 @@
+---
+
+version: "2.1"
+
+services:
+
+{% for n in range(nodes) %}
+    redis_{{n+1}}:
+        image: "redislabs/redis:{{version}}"
+        container_name: enterprise-{{name}}-{{n+1}}
+
+        cap_add:
+            - SYS_RESOURCE
+
+{% if loop.first %}
+        ports:
+            - "8443:8443"
+            - "9443:9443"
+{% for p in ports %}
+            - "{{p}}:{{p}}"
+{% endfor %}
+{% endif %}
+{% if mounts|length > 0 %}
+{% for m in mounts %}
+            - {{m['local']}}:{{m['remote']}}
+{% endfor %}
+{% endif%}
+{% endfor %}

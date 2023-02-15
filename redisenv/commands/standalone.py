@@ -88,7 +88,6 @@ def create(
 
     w = DockerComposeWrapper(g)
     sp = g.gen_spec(
-        name,
         nodes,
         version,
         image,

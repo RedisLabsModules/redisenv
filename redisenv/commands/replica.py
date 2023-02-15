@@ -105,7 +105,6 @@ def create(
     g = ReplicaHandler(ctx.obj.get("DESTDIR"), name)
     w = DockerComposeWrapper(g)
     sp = g.gen_spec(
-        name,
         nodes,
         version,
         image,

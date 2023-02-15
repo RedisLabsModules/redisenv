@@ -1,6 +1,8 @@
 import json
+import time
 import os
 import subprocess
+import docker
 from typing import Dict, List, Optional
 from .util import free_ports
 
@@ -12,6 +14,7 @@ SENTINEL_TYPE = "sentinel"
 STANDALONE_TYPE = "standalone"
 REPLICAOF_TYPE = "replicaof"
 CLUSTER_TYPE = "cluster"
+ENTERPRISE_CLUSTER_TYPE = "enterprise"
 
 
 _default_options = {
@@ -105,10 +108,16 @@ class EnvironmentHandler:
             templatefile = "sentinel.tmpl"
         elif redistype == CLUSTER_TYPE:
             templatefile = "cluster.tmpl"
+        elif redistype == ENTERPRISE_CLUSTER_TYPE:
+            templatefile = "enterprise.tmpl"
+
         if config:
             self._generate(templatefile, config, self.envfile)
 
         self._start()
+        after_start = getattr(self, "after_start", None)
+        if after_start is not None:
+            after_start()
 
     def _start(self):
         cmd = ["docker-compose", "-f", self.envfile, "up", "-d", "--quiet-pull"]
@@ -126,7 +135,6 @@ class StandaloneHandler(EnvironmentHandler):
 
     def gen_spec(
         self,
-        name: str,
         nodes: int = _default_options["_nodes"],
         version: str = _default_options["_version"],
         image: str = _default_options["_image"],
@@ -138,7 +146,7 @@ class StandaloneHandler(EnvironmentHandler):
         """Generate the environment spec, used in generating the
         docker-compose configuration.
         """
-        d = {"name": name}
+        d = {"name": self.envname}
         d["nodes"] = nodes
         d["version"] = version
         d["listening_port"] = 6379
@@ -160,7 +168,6 @@ class ReplicaHandler(EnvironmentHandler):
 
     def gen_spec(
         self,
-        name: str,
         nodes: int = _default_options["_nodes"],
         version: str = _default_options["_version"],
         image: str = _default_options["_image"],
@@ -174,7 +181,7 @@ class ReplicaHandler(EnvironmentHandler):
         """Generate the environment spec, used in generating the
         docker-compose configuration.
         """
-        d = {"name": name}
+        d = {"name": self.envname}
         d["nodes"] = nodes
         d["version"] = version
         d["listening_port"] = 6379
@@ -210,7 +217,6 @@ class SentinelHandler(EnvironmentHandler):
 
     def gen_spec(
         self,
-        name: str,
         nodes: int = _default_options["_nodes"],
         version: str = _default_options["_version"],
         image: str = _default_options["_image"],
@@ -221,7 +227,7 @@ class SentinelHandler(EnvironmentHandler):
     ) -> Dict:
         """Generate the sentinel environment spec, and conf file."""
 
-        d = {"name": name}
+        d = {"name": self.envname}
         d["nodes"] = nodes
         d["version"] = version
         d["listening_port"] = 6379
@@ -353,3 +359,90 @@ class ClusterHandler(EnvironmentHandler):
         self._generate("cluster.tmpl", config, self.envfile)
 
         self._start()
+
+
+class EnterpriseClusterHandler(EnvironmentHandler):
+    """The handler for redis enterprise"""
+
+    def gen_spec(
+        self,
+        nodes: int,
+        version: str,
+        ports: List,
+        mounts: List,
+    ):
+
+        d = {"name": self.envname}
+        d["nodes"] = nodes
+        d["version"] = version
+        d["ports"] = ports
+
+        d["mounts"] = []
+        for m in mounts:
+            d["mounts"].append({"local": m[0], "remote": m[1]})
+
+        # for later, for use in this class only
+        self._ports = ports
+
+        return d
+
+    def credentials(self, username, password):
+        self._username = username
+        self._password = password
+
+    @property
+    def ports(self):
+        return self._ports
+
+    @property
+    def username(self):
+        return self._username
+
+    @property
+    def password(self):
+        return self._password
+
+    def after_start(self):
+        logger.info("waiting for all the dockers to settle. sleeping")
+        time.sleep(30)
+        cmd = [
+            "/opt/redislabs/bin/rladmin",
+            "cluster",
+            "create",
+            "name",
+            self.envname,
+            "username",
+            self.username,
+            "password",
+            self.password,
+        ]
+        logger.info(f"creating the cluster named {self.envname}")
+
+        # set up the cluster
+        d = docker.from_env()
+        name = f"enterprise-{self.envname}-1"
+        container = d.containers.get(name)
+        ipaddress = container.attrs.get("NetworkSettings").get("IPAddress")
+        res, out = container.exec_run(" ".join(cmd))
+
+        c = 2
+        for p in self.ports[1:]:
+
+            cmd = [
+                "/opt/redislabs/bin/rladmin",
+                "cluster",
+                "join",
+                "nodes",
+                ipaddress,
+                "username",
+                self.username,
+                "password",
+                self.password,
+                "accept_servers",
+                "enabled",
+            ]
+
+            name = f"enterprise-{self.envname}-{c}"
+            container = d.containers.get(name)
+            logger.info(f"joining the node at port {p} to the cluster")
+            res, out = container.exec_run(" ".join(cmd))

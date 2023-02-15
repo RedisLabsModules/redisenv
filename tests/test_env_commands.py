@@ -16,6 +16,7 @@ environments = [
     "replica",
     "sentinel",
     "cluster",
+    "enterprise",
 ]
 
 
