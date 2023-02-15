@@ -27,8 +27,11 @@ _default_options = {
 class EnvironmentHandler:
     """Environment"""
 
-    def __init__(self, destdir: str, disable_logging=False):
+    def __init__(self, destdir: str, env_name: str, disable_logging=False):
         self._ENVDIR = destdir
+        self._ENVNAME = env_name
+        os.makedirs(self.envdir, exist_ok=True)
+        os.makedirs(self.envconfigdir, exist_ok=True)
         if disable_logging:
             logger.disable("redisenv")
 
@@ -42,10 +45,14 @@ class EnvironmentHandler:
             if x[-4:] == ".yml":
                 logger.info(x)
 
-    def listports(self, name, output=True):
+    def listports(self, output=True):
         """Output the ports (as json) for the specified environment
         Set output to False, if using this in a library"""
-        d = yaml.safe_load(open(self._getenv(name)))
+        if not os.path.isfile(self.envfile):
+            logger.critical(f"There is no environment in {self.envfile}")
+            return
+
+        d = yaml.safe_load(open(self.envfile))
         ports = {}
         for k, i in d.get("services").items():
             for p in i["ports"]:
@@ -56,32 +63,39 @@ class EnvironmentHandler:
             print(json.dumps(ports))
         return ports
 
-    def _getenv(self, name):
-        e = self._envfile(name)
-        if not os.path.isfile(e):
-            logger.critical(f"{name} does not exist")
-            return
-        return e
-
     @property
     def envdir(self):
         return self._ENVDIR
 
-    def _envfile(self, name: str):
-        return os.path.join(self.envdir, f"{name}.yml")
+    @property
+    def envname(self):
+        return self._ENVNAME
 
-    def _generate(self, name: str, config: Dict, redistype: str):
-        """Generate the environment configuration"""
+    @property
+    def envfile(self):
+        return os.path.join(self.envdir, f"{self.envname}.yml")
 
-        if not os.path.isdir(self.envdir):
-            os.makedirs(self.envdir)
+    @property
+    def envconfigdir(self):
+        cfg = os.path.join(self.envdir, self.envname, "configs")
+        os.makedirs(cfg, exist_ok=True)
+        return cfg
 
-        destfile = self._envfile(name)
+    def _generate(self, template: str, context: dict = {}, dest=None):
+
         here = os.path.join(os.path.dirname(__file__), "templates")
+        fsl = jinja2.FileSystemLoader(searchpath=here)
+        tenv = jinja2.Environment(loader=fsl, trim_blocks=True)
+        tmpl = tenv.get_template(template)
+        if dest:
+            with open(dest, "w+") as fp:
+                logger.debug(f"Writing {dest}")
+                fp.write(tmpl.render(context))
 
-        # add the environment here
-        tmpl = jinja2.FileSystemLoader(searchpath=here)
-        tenv = jinja2.Environment(loader=tmpl, trim_blocks=True)
+        return tmpl.render(context)
+
+    def start(self, config: Optional[Dict], redistype: str = STANDALONE_TYPE):
+        """Start the environment"""
 
         if redistype == STANDALONE_TYPE:
             templatefile = "standalone.tmpl"
@@ -91,74 +105,19 @@ class EnvironmentHandler:
             templatefile = "sentinel.tmpl"
         elif redistype == CLUSTER_TYPE:
             templatefile = "cluster.tmpl"
-
-        tmpl = tenv.get_template(templatefile)
-        with open(destfile, "w+") as fp:
-            logger.debug(f"Writing {destfile}")
-            fp.write(tmpl.render(config))
-
-    def start(
-        self, name: str, config: Optional[Dict], redistype: str = STANDALONE_TYPE
-    ):
-        """Start the environment"""
         if config:
-            logger.info(f"Generating environment {name}")
-            self._generate(name, config, redistype)
+            self._generate(templatefile, config, self.envfile)
 
-        self._start(name)
+        self._start()
 
-    def _start(self, name):
-        cmd = ["docker-compose", "-f", self._envfile(name), "up", "-d", "--quiet-pull"]
+    def _start(self):
+        cmd = ["docker-compose", "-f", self.envfile, "up", "-d", "--quiet-pull"]
         try:
-            logger.info(f"Starting environment {name} via docker-compose")
+            logger.info(f"Starting environment {self.envname} via docker-compose")
             logger.debug(" ".join(cmd))
             subprocess.run(cmd, check=True)
         except:
-            logger.critical(f"Failed to start environment {name}.")
-            raise
-
-    def pause(self, name: str):
-        """Pause, the specified environment"""
-        cmd = ["docker-compose", "-f", self._envfile(name), "pause"]
-        logger.info(f"Pausing environment {name}")
-
-        try:
-            subprocess.run(cmd, check=True)
-        except:
-            logger.critical(f"Failed to pause environment {name}")
-            raise
-
-    def unpause(self, name: str):
-        """Unpause, the specified environment"""
-        cmd = ["docker-compose", "-f", self._envfile(name), "unpause"]
-        logger.info(f"Unpausing environment {name}")
-
-        try:
-            subprocess.run(cmd, check=True)
-        except:
-            logger.critical(f"Failed to pause environment {name}")
-            raise
-
-    def restart(self, name: str):
-        """Restart, the specified environment"""
-        cmd = ["docker-compose", "-f", self._envfile(name), "restart"]
-        try:
-            logger.info(f"Restarting environment {name}")
-            logger.debug(" ".join(cmd))
-            subprocess.run(cmd, check=True)
-        except:
-            logger.critical(f"Failed to restart environment {name}")
-            raise
-
-    def stop(self, name: str):
-        """Stop the named environment, and remove the generated artifacts"""
-        cmd = ["docker-compose", "-f", self._envfile(name), "rm", "-s", "-f"]
-        try:
-            logger.info(f"Starting environment {name} via docker-compose")
-            logger.debug(" ".join(cmd))
-            subprocess.run(cmd, check=True)
-        except:
-            logger.critical(f"Failed to stop environment {name}")
+            logger.critical(f"Failed to start environment {self.envname}.")
             raise
 
 
@@ -237,13 +196,13 @@ class ReplicaHandler(EnvironmentHandler):
 class SentinelHandler(EnvironmentHandler):
     """A wrapper, specificatlly for sentinel"""
 
-    def _write_configs(self, env_name, config_file_content):
+    def _write_configs(self, config_file_content):
         """Generate the configuration files for sentinel"""
 
         count = 1
         for c in config_file_content:
             node_name = f"sentinel{count}"
-            confdest = os.path.join(self.envdir, env_name, "configs", str(count))
+            confdest = os.path.join(self.envconfigdir, str(count))
             os.makedirs(confdest, exist_ok=True)
             count += 1
             with open(os.path.join(confdest, "sentinel.conf"), "w+") as fp:
@@ -308,11 +267,11 @@ class SentinelHandler(EnvironmentHandler):
             conffiles.append(tmpl.render(context))
         return conffiles
 
-    def start(self, env_name, config_file_content, config):
+    def start(self, config_file_content, config):
         """Generate the sentinel configs, then start it up"""
-        self._write_configs(env_name, config_file_content)
-        self._generate(env_name, config, SENTINEL_TYPE)
-        self._start(env_name)
+        self._write_configs(config_file_content)
+        self._generate("sentinel.tmpl", config, self.envfile)
+        self._start()
 
 
 class ClusterHandler(EnvironmentHandler):
@@ -326,20 +285,15 @@ class ClusterHandler(EnvironmentHandler):
         """Generates the cluster configuration file contents,
         per cluster node"""
 
-        here = os.path.join(os.path.dirname(__file__), "templates")
-        fsl = jinja2.FileSystemLoader(searchpath=here)
-        tenv = jinja2.Environment(loader=fsl, trim_blocks=True)
-        tmpl = tenv.get_template("cluster.conf.tmpl")
-
         conffiles = {}
         for p in ports:
             context = {"port": p, "redisopts": redisopts}
-            conffiles[str(p)] = tmpl.render(context)
+            res = self._generate("cluster.conf.tmpl", context, None)
+            conffiles[str(p)] = res
         return conffiles
 
     def gen_spec(
         self,
-        name: str,
         nodes: int = _default_options["_nodes"],
         version: str = _default_options["_version"],
         image: str = _default_options["_image"],
@@ -349,7 +303,7 @@ class ClusterHandler(EnvironmentHandler):
     ):
         """Generate the docker-compose variables for the specified
         cluster configuration."""
-        d = {"name": name}
+        d = {"name": self.envname}
         d["nodes"] = nodes
         d["version"] = version
         d["image"] = image
@@ -361,50 +315,41 @@ class ClusterHandler(EnvironmentHandler):
 
         return d
 
-    def _get_clustermap(self, env_name, ports: List = []) -> str:
-        nodemapfile = os.path.join(self.envdir, env_name, "configs", "nodemap")
+    def _get_clustermap(self, ports: List = []) -> str:
+        nodemapfile = os.path.join(self.envconfigdir, "nodemap")
         with open(nodemapfile, "w+") as fp:
             for p in ports:
                 fp.write(f"127.0.0.1:{p}\n")
         return nodemapfile
 
-    def _write_configs(self, env_name: str, config_file_content: Dict):
+    def _write_configs(self, config_file_content: Dict):
         """Generate the redis configuration file for the cluster node"""
         for k, v in config_file_content.items():
-            confdest = os.path.join(self.envdir, env_name, "configs", k, "redis.conf")
+            confdest = os.path.join(self.envconfigdir, k, "redis.conf")
             os.makedirs(os.path.dirname(confdest), exist_ok=True)
             with open(confdest, "w+") as fp:
                 fp.write(v)
 
-    def _gen_cluster_script(self, env_name: str, ports: List, replicas: int) -> str:
+    def _gen_cluster_script(self, ports: List, replicas: int) -> str:
 
-        cluster_script = os.path.join(self.envdir, env_name, "start_cluster.sh")
+        cluster_script = os.path.join(self.envdir, self.envname, "start_cluster.sh")
 
         config = {
             "ports": ports,
             "replicas": replicas,
         }
-        here = os.path.join(os.path.dirname(__file__), "templates")
-
-        # add the environment here
-        tmpl = jinja2.FileSystemLoader(searchpath=here)
-        tenv = jinja2.Environment(loader=tmpl, trim_blocks=True)
-        tmpl = tenv.get_template("start_cluster.sh.tmpl")
-        with open(cluster_script, "w+") as fp:
-            logger.debug(f"Writing {cluster_script}")
-            fp.write(tmpl.render(config))
+        self._generate("start_cluster.sh.tmpl", config, cluster_script)
 
         return cluster_script
 
-    def start(self, env_name: str, config_file_content: Dict, config: Dict):
-        os.makedirs(os.path.join(self.envdir, env_name, "configs"), exist_ok=True)
+    def start(self, config_file_content: Dict, config: Dict):
         startscript = self._gen_cluster_script(
-            env_name, config.get("ports"), config.get("replicas")
+            config.get("ports"), config.get("replicas")
         )
-        nodemapfile = self._get_clustermap(env_name, config.get("ports"))
-        self._write_configs(env_name, config_file_content)
+        nodemapfile = self._get_clustermap(config.get("ports"))
+        self._write_configs(config_file_content)
         config["nodemapfile"] = nodemapfile
         config["startscript"] = startscript
-        self._generate(env_name, config, CLUSTER_TYPE)
+        self._generate("cluster.tmpl", config, self.envfile)
 
-        self._start(env_name)
+        self._start()

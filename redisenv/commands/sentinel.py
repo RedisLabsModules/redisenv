@@ -2,6 +2,7 @@ import sys
 
 import click
 
+from ..composer import DockerComposeWrapper
 from ..env import SentinelHandler, _default_options
 from ..util import free_ports
 from . import defaultenvname
@@ -110,7 +111,8 @@ def create(
         sys.exit(3)
 
     ports = free_ports(nodes)
-    g = SentinelHandler(ctx.obj.get("DESTDIR"))
+    g = SentinelHandler(ctx.obj.get("DESTDIR"), name)
+    w = DockerComposeWrapper(g)
 
     cfg = g.gen_config(
         ports,
@@ -133,7 +135,7 @@ def create(
 
     if force:
         try:
-            g.stop(name)
+            w.stop()
         except:
             pass
-    g.start(name, cfg, sp)
+    g.start(cfg, sp)

@@ -2,6 +2,7 @@ import sys
 
 import click
 
+from ..composer import DockerComposeWrapper
 from ..env import REPLICAOF_TYPE, ReplicaHandler, _default_options
 from . import defaultenvname
 
@@ -101,7 +102,8 @@ def create(
             sys.stderr.write("To configure replicas, at least two nodes are needed.\n")
             sys.exit(3)
 
-    g = ReplicaHandler(ctx.obj.get("DESTDIR"))
+    g = ReplicaHandler(ctx.obj.get("DESTDIR"), name)
+    w = DockerComposeWrapper(g)
     sp = g.gen_spec(
         name,
         nodes,
@@ -117,7 +119,7 @@ def create(
 
     if force:
         try:
-            g.stop(name)
+            w.stop()
         except:
             pass
-    g.start(name, sp, REPLICAOF_TYPE)
+    g.start(sp, REPLICAOF_TYPE)

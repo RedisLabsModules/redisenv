@@ -3,6 +3,7 @@ import sys
 import click
 
 from ..env import STANDALONE_TYPE, StandaloneHandler, _default_options
+from ..composer import DockerComposeWrapper
 from . import defaultenvname
 
 
@@ -83,8 +84,9 @@ def create(
 ):
     """create and start a new environment"""
 
-    g = StandaloneHandler(ctx.obj.get("DESTDIR"))
+    g = StandaloneHandler(ctx.obj.get("DESTDIR"), name)
 
+    w = DockerComposeWrapper(g)
     sp = g.gen_spec(
         name,
         nodes,
@@ -97,7 +99,7 @@ def create(
     )
     if force:
         try:
-            g.stop(name)
+            w.stop()
         except:
             pass
-    g.start(name, sp, STANDALONE_TYPE)
+    g.start(sp, STANDALONE_TYPE)

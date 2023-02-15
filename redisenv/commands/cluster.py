@@ -4,6 +4,7 @@ import click
 
 from ..env import ClusterHandler, _default_options
 from ..util import free_ports
+from ..composer import DockerComposeWrapper
 from . import defaultenvname
 
 
@@ -92,12 +93,12 @@ def create(
         sys.exit(3)
 
     ports = free_ports(nodes, cluster=True)
-    g = ClusterHandler(ctx.obj.get("DESTDIR"))
+    g = ClusterHandler(ctx.obj.get("DESTDIR"), name)
+    w = DockerComposeWrapper(g)
 
     cfg = g.gen_config(ports, redisopts)
 
     sp = g.gen_spec(
-        name,
         nodes,
         version,
         image,
@@ -108,7 +109,7 @@ def create(
 
     if force:
         try:
-            g.stop(name)
+            w.stop()
         except:
             pass
-    g.start(name, cfg, sp)
+    g.start(cfg, sp)
