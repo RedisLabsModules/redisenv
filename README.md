@@ -16,6 +16,10 @@ Currently redisenv supports:
 
 * Redis masters with replicas
 
+* Redis Enterprise Clusters
+
+    Note: These require ports 8443, 9443, and can pick a random port per database. As a result, these two ports must be free in order to start a cluster. This is a temporary limitation, for now.
+
 Note: Today Redis Standalone supports redis-stack, but nothing else does
 
 ----
@@ -29,6 +33,10 @@ Note: Today Redis Standalone supports redis-stack, but nothing else does
 * docker-compose
 
 * docker
+
+```bash
+pip install redisenv
+```
 
 ## Usage
 

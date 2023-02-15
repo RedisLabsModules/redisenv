@@ -1,6 +1,7 @@
-from loguru import logger
-from typing import List
 import subprocess
+from typing import List
+
+from loguru import logger
 
 
 class DockerComposeWrapper:

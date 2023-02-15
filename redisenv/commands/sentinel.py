@@ -123,7 +123,6 @@ def create(
     )
 
     sp = g.gen_spec(
-        name=name,
         nodes=nodes,
         version=version,
         image=image,

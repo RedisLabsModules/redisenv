@@ -2,9 +2,9 @@ import sys
 
 import click
 
+from ..composer import DockerComposeWrapper
 from ..env import ClusterHandler, _default_options
 from ..util import free_ports
-from ..composer import DockerComposeWrapper
 from . import defaultenvname
 
 
