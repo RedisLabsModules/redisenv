@@ -69,9 +69,21 @@ class EnvironmentHandler:
         d = yaml.safe_load(open(self.envfile))
         ports = {}
         for k, i in d.get("services").items():
-            for p in i["ports"]:
+            
+            c = 1
+            for p in i.get("ports", []):
                 port = p.split(":")[0]
-                ports[k] = {"port": port, "connstr": f"redis://localhost:{port}"}
+                _name = i.get("container_name")
+
+                # non-enterprise is multiple dockers
+                if _name.find("enterprise") == 1:
+                    ports[k] = {"port": port, "connstr": f"redis://localhost:{port}"}
+                    
+                else:
+                    # the first two ports are deserved for the enterprise rest services
+                    if c >=3 :
+                        ports[f"db{c-2}-{_name}"] = {"port": port, "connstr": f"redis://localhost:{port}"}
+                    c += 1
 
         if output:
             print(json.dumps(ports))
