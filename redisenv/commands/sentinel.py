@@ -86,6 +86,12 @@ def sentinel():
     default="172.0.0.1",
     help="Set, to override the docker ip (i.e if you want to use an existing redis)",
 )
+@click.option(
+    "--generate-only",
+    help="set, to only generate the configurations, and not run them",
+    is_flag=True,
+    default=False,
+)
 @click.pass_context
 def create(
     ctx,
@@ -101,6 +107,7 @@ def create(
     sentinelopts,
     redisopts,
     docker_ip,
+    generate_only,
 ):
     """create and start a new environment"""
 
@@ -111,7 +118,7 @@ def create(
         sys.exit(3)
 
     ports = free_ports(nodes)
-    g = SentinelHandler(ctx.obj.get("DESTDIR"), name)
+    g = SentinelHandler(ctx.obj.get("DESTDIR"), name, generate_only=generate_only)
     w = DockerComposeWrapper(g)
 
     cfg = g.gen_config(

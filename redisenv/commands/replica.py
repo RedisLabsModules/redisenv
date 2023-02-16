@@ -81,6 +81,12 @@ def replica():
     default="172.0.0.1",
     help="Set, to override the  docker ip (mostly used with the replicaof options)",
 )
+@click.option(
+    "--generate-only",
+    help="set, to only generate the configurations, and not run them",
+    is_flag=True,
+    default=False,
+)
 @click.pass_context
 def create(
     ctx,
@@ -95,6 +101,7 @@ def create(
     redisopts,
     replicaof,
     docker_ip,
+    generate_only
 ):
     """create and start a new environment"""
     if replicaof == -1:
@@ -102,7 +109,7 @@ def create(
             sys.stderr.write("To configure replicas, at least two nodes are needed.\n")
             sys.exit(3)
 
-    g = ReplicaHandler(ctx.obj.get("DESTDIR"), name)
+    g = ReplicaHandler(ctx.obj.get("DESTDIR"), name, generate_only=generate_only)
     w = DockerComposeWrapper(g)
     sp = g.gen_spec(
         nodes,

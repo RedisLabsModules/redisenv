@@ -41,9 +41,10 @@ _default_options = {
 class EnvironmentHandler:
     """Environment"""
 
-    def __init__(self, destdir: str, env_name: str, disable_logging=False):
+    def __init__(self, destdir: str, env_name: str, disable_logging=False, generate_only=False):
         self._ENVDIR = destdir
         self._ENVNAME = env_name
+        self._GENERATE_ONLY = generate_only
         os.makedirs(self.envdir, exist_ok=True)
         os.makedirs(self.envconfigdir, exist_ok=True)
         if disable_logging:
@@ -137,6 +138,8 @@ class EnvironmentHandler:
         if config:
             self._generate(templatefile, config, self.envfile)
 
+        if self._GENERATE_ONLY:
+            return
         self._start()
         after_start = getattr(self, "after_start", None)
         if after_start is not None:
@@ -300,6 +303,8 @@ class SentinelHandler(EnvironmentHandler):
         """Generate the sentinel configs, then start it up"""
         self._write_configs(config_file_content)
         self._generate("sentinel.tmpl", config, self.envfile)
+        if self._GENERATE_ONLY:
+            return
         self._start()
 
 
@@ -381,6 +386,8 @@ class ClusterHandler(EnvironmentHandler):
         config["startscript"] = startscript
         self._generate("cluster.tmpl", config, self.envfile)
 
+        if self._GENERATE_ONLY:
+            return
         self._start()
 
 

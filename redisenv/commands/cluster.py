@@ -68,6 +68,12 @@ def cluster():
     default=_default_options["_cluster_replicas"],
     type=int,
 )
+@click.option(
+    "--generate-only",
+    help="set, to only generate the configurations, and not run them",
+    is_flag=True,
+    default=False,
+)
 @click.pass_context
 def create(
     ctx,
@@ -79,6 +85,7 @@ def create(
     mounts,
     redisopts,
     replicas,
+    generate_only,
 ):
     """create and start a new environment"""
 
@@ -93,7 +100,7 @@ def create(
         sys.exit(3)
 
     ports = free_ports(nodes, cluster=True)
-    g = ClusterHandler(ctx.obj.get("DESTDIR"), name)
+    g = ClusterHandler(ctx.obj.get("DESTDIR"), name, generate_only=generate_only)
     w = DockerComposeWrapper(g)
 
     cfg = g.gen_config(ports, redisopts)

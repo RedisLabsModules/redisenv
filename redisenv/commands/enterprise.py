@@ -72,6 +72,12 @@ def enterprise():
     default="redis123",
     show_default=True,
 )
+@click.option(
+    "--generate-only",
+    help="set, to only generate the configurations, and not run them",
+    is_flag=True,
+    default=False,
+)
 @click.pass_context
 def create(
     ctx,
@@ -83,6 +89,7 @@ def create(
     mounts,
     username,
     password,
+    generate_only,
 ):
     """create and start a redis enterprise cluster"""
 
@@ -92,7 +99,7 @@ def create(
         )
         sys.exit(3)
 
-    g = EnterpriseClusterHandler(ctx.obj.get("DESTDIR"), name)
+    g = EnterpriseClusterHandler(ctx.obj.get("DESTDIR"), name, generate_only=generate_only)
     w = DockerComposeWrapper(g)
 
     ports = [8443, 9443]

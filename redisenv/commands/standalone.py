@@ -69,6 +69,12 @@ def standalone():
     multiple=True,
     type=str,
 )
+@click.option(
+    "--generate-only",
+    help="set, to only generate the configurations, and not run them",
+    is_flag=True,
+    default=False,
+)
 @click.pass_context
 def create(
     ctx,
@@ -81,10 +87,11 @@ def create(
     conffile,
     ipv6,
     redisopts,
+    generate_only,
 ):
     """create and start a new environment"""
 
-    g = StandaloneHandler(ctx.obj.get("DESTDIR"), name)
+    g = StandaloneHandler(ctx.obj.get("DESTDIR"), name, generate_only=generate_only)
 
     w = DockerComposeWrapper(g)
     sp = g.gen_spec(
