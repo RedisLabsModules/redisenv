@@ -123,3 +123,22 @@ def ports(ctx, name):
     """list the ports generated for an environment"""
     g = EnvironmentHandler(ctx.obj.get("DESTDIR"), name)
     g.listports()
+    
+@cli.command()
+@click.option(
+    "--name",
+    help="environment name",
+    default=defaultenvname,
+    show_default=True,
+)
+@click.option(
+    "--dotenvfile",
+    help="path to dotenv file",
+    default=".env",
+    show_default=True,
+)
+@click.pass_context
+def appent_to_dotenv(ctx, name):
+    """Output the ports and connection string to a dotenv file"""
+    g = EnvironmentHandler(ctx.obj.get("DESTDIR"), name)
+    g.update_dotenv()

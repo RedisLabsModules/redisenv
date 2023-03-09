@@ -89,6 +89,14 @@ class EnvironmentHandler:
         if output:
             print(json.dumps(ports))
         return ports
+    
+    def update_dotenv(self, dest):
+        """Gather the ports and output variables to an envfile for using via dotenv"""
+        ports = self.listports(False)
+        with open(dest, 'a') as fp:
+            for k, v in ports.items():
+                fp.write(f"{k}_PORT={v['port']}")
+                fp.write(f"{k}_URL={v['connstr']}")
 
     @property
     def envdir(self):
