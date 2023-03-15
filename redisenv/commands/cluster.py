@@ -70,6 +70,7 @@ def cluster():
 )
 @click.option(
     "--generate-only",
+    "-g",
     help="set, to only generate the configurations, and not run them",
     is_flag=True,
     default=False,
