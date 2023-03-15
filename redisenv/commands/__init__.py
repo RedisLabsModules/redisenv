@@ -123,7 +123,8 @@ def ports(ctx, name):
     """list the ports generated for an environment"""
     g = EnvironmentHandler(ctx.obj.get("DESTDIR"), name)
     g.listports()
-    
+
+
 @cli.command()
 @click.option(
     "--name",

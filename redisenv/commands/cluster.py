@@ -74,6 +74,12 @@ def cluster():
     is_flag=True,
     default=False,
 )
+@click.option(
+    "--starting-port",
+    help="If set to a value other than -1 (default), assign ports starting at the specified port",
+    type=int,
+    default=-1,
+)
 @click.pass_context
 def create(
     ctx,
@@ -86,6 +92,7 @@ def create(
     redisopts,
     replicas,
     generate_only,
+    starting_port,
 ):
     """create and start a new environment"""
 
@@ -99,7 +106,7 @@ def create(
         sys.stderr.write("There must be fewer replicas than nodes.\n")
         sys.exit(3)
 
-    ports = free_ports(nodes, cluster=True)
+    ports = free_ports(nodes, cluster=True, starting_port=starting_port)
     g = ClusterHandler(ctx.obj.get("DESTDIR"), name, generate_only=generate_only)
     w = DockerComposeWrapper(g)
 
@@ -112,6 +119,7 @@ def create(
         mounts,
         ports,
         replicas,
+        starting_port,
     )
 
     if force:

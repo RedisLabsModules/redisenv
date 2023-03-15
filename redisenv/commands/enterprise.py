@@ -5,7 +5,8 @@ import click
 from loguru import logger
 
 from ..composer import DockerComposeWrapper
-from ..env import ENTERPRISE_CLUSTER_TYPE, EnterpriseClusterHandler, _default_options
+from ..env import (ENTERPRISE_CLUSTER_TYPE, EnterpriseClusterHandler,
+                   _default_options)
 from ..util import free_ports
 from . import defaultenvname
 
@@ -99,7 +100,9 @@ def create(
         )
         sys.exit(3)
 
-    g = EnterpriseClusterHandler(ctx.obj.get("DESTDIR"), name, generate_only=generate_only)
+    g = EnterpriseClusterHandler(
+        ctx.obj.get("DESTDIR"), name, generate_only=generate_only
+    )
     w = DockerComposeWrapper(g)
 
     ports = [8443, 9443]

@@ -92,6 +92,12 @@ def sentinel():
     is_flag=True,
     default=False,
 )
+@click.option(
+    "--starting-port",
+    help="If set to a value other than -1 (default), assign ports starting at the specified port",
+    type=int,
+    default=-1,
+)
 @click.pass_context
 def create(
     ctx,
@@ -108,6 +114,7 @@ def create(
     redisopts,
     docker_ip,
     generate_only,
+    starting_port,
 ):
     """create and start a new environment"""
 
@@ -117,7 +124,7 @@ def create(
         )
         sys.exit(3)
 
-    ports = free_ports(nodes)
+    ports = free_ports(nodes, starting_port=starting_port)
     g = SentinelHandler(ctx.obj.get("DESTDIR"), name, generate_only=generate_only)
     w = DockerComposeWrapper(g)
 
@@ -137,6 +144,7 @@ def create(
         redisconf=redisconf,
         redisopts=redisopts,
         ports=ports,
+        starting_port=starting_port,
     )
 
     if force:

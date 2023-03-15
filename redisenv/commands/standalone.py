@@ -75,6 +75,12 @@ def standalone():
     is_flag=True,
     default=False,
 )
+@click.option(
+    "--starting-port",
+    help="If set to a value other than -1 (default), assign ports starting at the specified port",
+    type=int,
+    default=-1,
+)
 @click.pass_context
 def create(
     ctx,
@@ -88,6 +94,7 @@ def create(
     ipv6,
     redisopts,
     generate_only,
+    starting_port,
 ):
     """create and start a new environment"""
 
@@ -102,6 +109,7 @@ def create(
         conffile,
         ipv6,
         redisopts,
+        starting_port,
     )
     if force:
         try:

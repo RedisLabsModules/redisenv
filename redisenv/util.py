@@ -4,10 +4,13 @@ from typing import List
 from loguru import logger
 
 
-def free_ports(num: int, cluster: bool = False) -> List:
+def free_ports(num: int, cluster: bool = False, starting_port: int = -1) -> List:
     """Find free ports, for the number of nodes specified
     starting at the base port.
     """
+
+    if starting_port != -1:
+        return [i + starting_port for i in range(0, num)]
 
     ports = []
     while len(ports) != num:

@@ -87,6 +87,12 @@ def replica():
     is_flag=True,
     default=False,
 )
+@click.option(
+    "--starting-port",
+    help="If set to a value other than -1 (default), assign ports starting at the specified port",
+    type=int,
+    default=-1,
+)
 @click.pass_context
 def create(
     ctx,
@@ -101,7 +107,8 @@ def create(
     redisopts,
     replicaof,
     docker_ip,
-    generate_only
+    generate_only,
+    starting_port,
 ):
     """create and start a new environment"""
     if replicaof == -1:
@@ -121,6 +128,7 @@ def create(
         redisopts,
         replicaof,
         docker_ip,
+        starting_port,
     )
 
     if force:

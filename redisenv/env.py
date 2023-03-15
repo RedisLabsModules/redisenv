@@ -41,7 +41,9 @@ _default_options = {
 class EnvironmentHandler:
     """Environment"""
 
-    def __init__(self, destdir: str, env_name: str, disable_logging=False, generate_only=False):
+    def __init__(
+        self, destdir: str, env_name: str, disable_logging=False, generate_only=False
+    ):
         self._ENVDIR = destdir
         self._ENVNAME = env_name
         self._GENERATE_ONLY = generate_only
@@ -70,7 +72,7 @@ class EnvironmentHandler:
         d = yaml.safe_load(open(self.envfile))
         ports = {}
         for k, i in d.get("services").items():
-            
+
             c = 1
             for p in i.get("ports", []):
                 port = p.split(":")[0]
@@ -79,21 +81,24 @@ class EnvironmentHandler:
                 # non-enterprise is multiple dockers
                 if _name.find("enterprise") == 1:
                     ports[k] = {"port": port, "connstr": f"redis://localhost:{port}"}
-                    
+
                 else:
                     # the first two ports are deserved for the enterprise rest services
-                    if c >=3 :
-                        ports[f"db{c-2}-{_name}"] = {"port": port, "connstr": f"redis://localhost:{port}"}
+                    if c >= 3:
+                        ports[f"db{c-2}-{_name}"] = {
+                            "port": port,
+                            "connstr": f"redis://localhost:{port}",
+                        }
                     c += 1
 
         if output:
             print(json.dumps(ports))
         return ports
-    
+
     def update_dotenv(self, dest):
         """Gather the ports and output variables to an envfile for using via dotenv"""
         ports = self.listports(False)
-        with open(dest, 'a') as fp:
+        with open(dest, "a") as fp:
             for k, v in ports.items():
                 fp.write(f"{k}_PORT={v['port']}")
                 fp.write(f"{k}_URL={v['connstr']}")
@@ -176,6 +181,7 @@ class StandaloneHandler(EnvironmentHandler):
         conffile: str = "",
         ipv6: bool = _default_options["_ipv6"],
         redisopts: List = [],
+        starting_port: int = -1,
     ) -> Dict:
         """Generate the environment spec, used in generating the
         docker-compose configuration.
@@ -188,7 +194,7 @@ class StandaloneHandler(EnvironmentHandler):
         d["ipv6"] = ipv6
         d["image"] = image
         d["redisoptions"] = redisopts
-        d["ports"] = free_ports(nodes)
+        d["ports"] = free_ports(nodes, starting_port=starting_port)
 
         d["mounts"] = []
         for m in mounts:
@@ -211,6 +217,7 @@ class ReplicaHandler(EnvironmentHandler):
         redisopts: List = [],
         replicaof: int = -1,
         dockerhost: str = None,
+        starting_port: int = -1,
     ) -> Dict:
         """Generate the environment spec, used in generating the
         docker-compose configuration.
@@ -224,7 +231,7 @@ class ReplicaHandler(EnvironmentHandler):
         d["image"] = image
         d["docker_host"] = dockerhost
         d["redisoptions"] = redisopts
-        d["ports"] = free_ports(nodes)
+        d["ports"] = free_ports(nodes, starting_port=starting_port)
         d["replicaof"] = replicaof
 
         d["mounts"] = []
@@ -258,6 +265,7 @@ class SentinelHandler(EnvironmentHandler):
         redisconf: str = "",
         redisopts: List = [],
         ports: List = [],
+        starting_port: int = -1,
     ) -> Dict:
         """Generate the sentinel environment spec, and conf file."""
 
@@ -277,7 +285,7 @@ class SentinelHandler(EnvironmentHandler):
         if ports != []:
             d["ports"] = ports
         else:
-            d["ports"] = free_ports(nodes)
+            d["ports"] = free_ports(nodes, starting_port=starting_port)
 
         return d
 
