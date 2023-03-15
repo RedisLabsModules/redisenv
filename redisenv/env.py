@@ -44,14 +44,14 @@ class EnvironmentHandler:
     def __init__(
         self, destdir: str, env_name: str, disable_logging=False, generate_only=False
     ):
-        self._ENVDIR = destdir
+        self._ENVDIR = os.path.abspath(destdir)
         self._ENVNAME = env_name
         self._GENERATE_ONLY = generate_only
         os.makedirs(self.envdir, exist_ok=True)
         os.makedirs(self.envconfigdir, exist_ok=True)
         if disable_logging:
             logger.disable("redisenv")
-
+            
     def listenvs(self):
         """List the environments"""
 
@@ -229,7 +229,7 @@ class ReplicaHandler(EnvironmentHandler):
         d["conffile"] = conffile
         d["ipv6"] = ipv6
         d["image"] = image
-        d["docker_host"] = dockerhost
+        d["dockerhost"] = dockerhost
         d["redisoptions"] = redisopts
         d["ports"] = free_ports(nodes, starting_port=starting_port)
         d["replicaof"] = replicaof
