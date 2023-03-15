@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "redisenv"
-version = "0.3.0"
+version = "0.3.1"
 description = "A tool for building redis test environments"
 authors = ["Redis OSS <oss@redis.io>"]
 readme = "README.md"
