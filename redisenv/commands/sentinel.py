@@ -9,7 +9,7 @@ from . import defaultenvname
 
 
 def sentinel():
-    """create a redis-sentinel environment"""
+    """create a redis-sentinel environment, one redis server and multiple sentinels behind it"""
 
 
 @click.command()
@@ -88,6 +88,7 @@ def sentinel():
 )
 @click.option(
     "--generate-only",
+    "-g",
     help="set, to only generate the configurations, and not run them",
     is_flag=True,
     default=False,

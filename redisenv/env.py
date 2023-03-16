@@ -51,7 +51,7 @@ class EnvironmentHandler:
         os.makedirs(self.envconfigdir, exist_ok=True)
         if disable_logging:
             logger.disable("redisenv")
-            
+
     def listenvs(self):
         """List the environments"""
 

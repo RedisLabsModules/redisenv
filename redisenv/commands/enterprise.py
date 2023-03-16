@@ -5,8 +5,7 @@ import click
 from loguru import logger
 
 from ..composer import DockerComposeWrapper
-from ..env import (ENTERPRISE_CLUSTER_TYPE, EnterpriseClusterHandler,
-                   _default_options)
+from ..env import ENTERPRISE_CLUSTER_TYPE, EnterpriseClusterHandler, _default_options
 from ..util import free_ports
 from . import defaultenvname
 
@@ -75,6 +74,7 @@ def enterprise():
 )
 @click.option(
     "--generate-only",
+    "-g",
     help="set, to only generate the configurations, and not run them",
     is_flag=True,
     default=False,
